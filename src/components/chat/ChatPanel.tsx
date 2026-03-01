@@ -54,6 +54,7 @@ export default function ChatPanel({ onSimulationRequest }: ChatPanelProps) {
     if (!pendingChatPrompt) return;
     const prompt = pendingChatPrompt;
     setChatPrompt(null);
+    shouldScrollRef.current = true;
     // If the prompt looks like a user question, send it directly
     if (prompt.endsWith('?') || prompt.startsWith('What')) {
       sendMessage(prompt);
