@@ -27,8 +27,14 @@ export default function SimulatorPage() {
   const { simulate, currentResults, isSimulating, savedScenarios } = useSimulation();
   const openSimulationModal = useSimulationStore((s) => s.openSimulationModal);
   const simulationModalOpen = useSimulationStore((s) => s.simulationModalOpen);
+  const closeSimulationModal = useSimulationStore((s) => s.closeSimulationModal);
   const setChatPrompt = useSimulationStore((s) => s.setChatPrompt);
   const hasHydrated = useSimulationStore((s) => s._hasHydrated);
+
+  // Always start on the dashboard when navigating to /simulator
+  useEffect(() => {
+    closeSimulationModal();
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Active scenario tracking for the unified chart + metric cards
   const [activeScenarioId, setActiveScenarioId] = useState<string | null>(null);
