@@ -49,14 +49,17 @@ export default function ProactiveInsights({ results, baseline, profile }: Proact
 
   const verdictCard: InsightCard | null = useMemo(() => {
     if (!verdict || verdict.severity === 'green') return null;
+    const retirementAge = results.config.scenario.retirementAge ?? results.config.profile.retirementAge;
+    const yearsToRetirement = retirementAge - results.config.profile.age;
+    const isEarlyAccumulator = yearsToRetirement >= 25;
     return {
       id: 'verdict',
-      severity: 'warning',
+      severity: verdict.severity === 'amber' && isEarlyAccumulator ? 'info' as InsightSeverity : 'warning',
       title: verdict.message,
       body: verdict.subtext,
       chatPrompt: verdict.chatPrompt,
     };
-  }, [verdict]);
+  }, [verdict, results]);
 
   const insights = useMemo(
     () => generateProactiveInsights(results, baseline, profile),

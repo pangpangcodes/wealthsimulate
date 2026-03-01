@@ -89,6 +89,8 @@ export function generateVerdict(results: SimulationResults): Verdict {
   const moneyLastsToAge = results.summary.moneyLastsToAge;
   const lifeExpectancy = results.config.profile.lifeExpectancy;
   const retirementAge = results.config.scenario.retirementAge ?? results.config.profile.retirementAge;
+  const yearsToRetirement = retirementAge - results.config.profile.age;
+  const isEarlyAccumulator = yearsToRetirement >= 25;
 
   // Check for short-term distress: significant portfolio drop in the first 1-3 years
   const earlyYears = results.yearlyData.slice(0, 3);
@@ -130,27 +132,39 @@ export function generateVerdict(results: SimulationResults): Verdict {
     const gap = lifeExpectancy - moneyLastsToAge;
     return {
       severity: 'amber',
-      message: `Your money runs short around age ${moneyLastsToAge}`,
-      subtext: `${gap} year${gap !== 1 ? 's' : ''} before life expectancy`,
-      chatPrompt: 'How can I make my money last longer?',
+      message: `Your savings are projected to cover you to age ${moneyLastsToAge}`,
+      subtext: `${gap} year${gap !== 1 ? 's' : ''} short of life expectancy. Small adjustments could close this gap.`,
+      chatPrompt: 'What small changes could extend my runway?',
     };
   }
 
   if (moneyLastsToAge <= retirementAge) {
     return {
-      severity: 'red',
-      message: `Your money runs out at age ${moneyLastsToAge}`,
-      subtext: `That's before you retire at ${retirementAge}`,
-      chatPrompt: 'What changes would get me back on track?',
+      severity: isEarlyAccumulator ? 'amber' : 'red',
+      message: isEarlyAccumulator
+        ? `At your current pace, savings would cover you to age ${moneyLastsToAge}`
+        : `Your savings are projected to cover you to age ${moneyLastsToAge}`,
+      subtext: isEarlyAccumulator
+        ? `That's before retirement at ${retirementAge} - but there's time to change this`
+        : `That's before your target retirement age of ${retirementAge}`,
+      chatPrompt: isEarlyAccumulator
+        ? 'What are my options to strengthen this?'
+        : 'What would it take to close this gap?',
     };
   }
 
   const gap = lifeExpectancy - moneyLastsToAge;
   return {
-    severity: 'red',
-    message: `Your money runs out at age ${moneyLastsToAge}`,
-    subtext: `${gap} years before life expectancy of ${lifeExpectancy}`,
-    chatPrompt: 'What changes would get me back on track?',
+    severity: isEarlyAccumulator ? 'amber' : 'red',
+    message: isEarlyAccumulator
+      ? `At your current pace, savings would cover you to age ${moneyLastsToAge}`
+      : `Your savings are projected to cover you to age ${moneyLastsToAge}`,
+    subtext: isEarlyAccumulator
+      ? `Based only on what I see now - this doesn't include a partner's income, career growth, or other life changes`
+      : `${gap} years short of life expectancy. This doesn't account for employer pensions or spousal income.`,
+    chatPrompt: isEarlyAccumulator
+      ? 'What are my options to strengthen this?'
+      : 'What would it take to close this gap?',
   };
 }
 
