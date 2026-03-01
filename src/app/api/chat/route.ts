@@ -89,6 +89,14 @@ export async function POST(request: NextRequest) {
       systemPrompt += `\n\n## Profile Validation Flags\nThe following profile values may need verification. Mention these gently if relevant to the user's question:\n${flagText}`;
     }
 
+    // Inject existing scenario summaries so Claude knows what data is already available
+    if (savedScenarioSummaries && savedScenarioSummaries.length > 0) {
+      const scenarioLines = savedScenarioSummaries.map((s) =>
+        `- "${s.name}": money lasts to age ${s.moneyLastsToAge}, retirement income $${Math.round(s.retirementAnnualIncomeP50).toLocaleString()}/yr, income replacement ${(s.incomeReplacementRatio * 100).toFixed(0)}%, retirement net worth $${Math.round(s.retirementNetWorthP50).toLocaleString()}`
+      ).join('\n');
+      systemPrompt += `\n\n## Existing Simulation Results\nThe following scenarios have ALREADY been run. If the user asks a general question about their retirement readiness (e.g. "Am I on track?", "How am I doing?"), answer using these existing results - do NOT run a new simulation. Only run a new simulation when the user asks a genuine "what if" with different parameters.\n${scenarioLines}`;
+    }
+
     // If latest message has simulation results, append analysis instructions
     if (isAnalysisRequest) {
       systemPrompt += analysisDepth === 'summary' ? SUMMARY_PROMPT_SUFFIX : ANALYSIS_PROMPT_SUFFIX;

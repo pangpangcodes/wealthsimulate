@@ -98,9 +98,12 @@ export function solveForGoal(config: GoalSolverConfig): GoalSolverResult {
   const [boundsLow, boundsHigh] = VARIABLE_BOUNDS[variable];
 
   // For desired_retirement_income, upper bound is 2x current expenses
+  // For retirement_age, cap at current target + 5 (nobody wants "work 10 more years")
   const effectiveHigh = variable === 'desired_retirement_income'
     ? Math.max(boundsHigh, profile.monthlyExpenses * 12 * 2)
-    : boundsHigh;
+    : variable === 'retirement_age'
+      ? Math.min(boundsHigh, (scenario.retirementAge ?? profile.retirementAge) + 5)
+      : boundsHigh;
 
   let low = boundsLow;
   let high = effectiveHigh;

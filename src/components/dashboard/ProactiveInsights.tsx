@@ -3,7 +3,7 @@
 import { useMemo } from 'react';
 import { AlertTriangle, Lightbulb, Info, Sparkles } from 'lucide-react';
 import type { SimulationResults, FinancialProfile } from '@/lib/types';
-import { generateProactiveInsights, type InsightCard, type InsightSeverity } from '@/lib/simulation/insights';
+import { generateProactiveInsights, generateVerdict, type InsightCard, type InsightSeverity } from '@/lib/simulation/insights';
 import { useSimulationStore } from '@/lib/store/simulation-store';
 
 interface ProactiveInsightsProps {
@@ -45,12 +45,30 @@ const SEVERITY_CONFIG: Record<InsightSeverity, {
 export default function ProactiveInsights({ results, baseline, profile }: ProactiveInsightsProps) {
   const setChatPrompt = useSimulationStore((s) => s.setChatPrompt);
 
+  const verdict = useMemo(() => generateVerdict(results), [results]);
+
+  const verdictCard: InsightCard | null = useMemo(() => {
+    if (!verdict || verdict.severity === 'green') return null;
+    return {
+      id: 'verdict',
+      severity: 'warning',
+      title: verdict.message,
+      body: verdict.subtext,
+      chatPrompt: verdict.chatPrompt,
+    };
+  }, [verdict]);
+
   const insights = useMemo(
     () => generateProactiveInsights(results, baseline, profile),
     [results, baseline, profile]
   );
 
-  if (insights.length === 0) return null;
+  const allInsights = useMemo(
+    () => (verdictCard ? [verdictCard, ...insights] : insights),
+    [verdictCard, insights]
+  );
+
+  if (allInsights.length === 0) return null;
 
   return (
     <div className="bg-white rounded-xl border border-ws-border p-5 space-y-3">
@@ -64,7 +82,7 @@ export default function ProactiveInsights({ results, baseline, profile }: Proact
         </div>
       </div>
       <div className="space-y-2">
-        {insights.map((insight) => (
+        {allInsights.map((insight) => (
           <InsightCardView
             key={insight.id}
             insight={insight}

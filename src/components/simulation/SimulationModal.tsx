@@ -240,7 +240,7 @@ export default function SimulationPanel() {
                 <p className="text-xs text-ws-text mt-1 leading-relaxed" dangerouslySetInnerHTML={{ __html: renderInlineMd(analysisSummary) }} />
                 {verdict.chatPrompt && (
                   <button
-                    className={`text-xs mt-2 underline underline-offset-2 ${verdictText}`}
+                    className="text-xs mt-2 underline underline-offset-2 text-ws-green"
                     onClick={() => { setChatPrompt(verdict.chatPrompt!); }}
                   >
                     Ask what you can do &rarr;

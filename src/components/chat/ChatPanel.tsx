@@ -62,6 +62,11 @@ export default function ChatPanel({ onSimulationRequest }: ChatPanelProps) {
       // Otherwise inject as assistant prompt
       injectAssistantMessage('What variable or variables would you like to change?');
     }
+    // Ensure scroll reaches bottom after the loading indicator renders
+    const timer = setTimeout(() => {
+      bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
+    }, 150);
+    return () => clearTimeout(timer);
   }, [pendingChatPrompt, setChatPrompt, injectAssistantMessage, sendMessage]);
 
   // Only auto-scroll when the user sends a message, not on every update.
