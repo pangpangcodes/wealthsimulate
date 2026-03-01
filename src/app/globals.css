@@ -1,26 +1,159 @@
 @import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
+@custom-variant dark (&:is(.dark *));
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
+  --font-serif: var(--font-playfair);
+  --color-sidebar-ring: var(--sidebar-ring);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar: var(--sidebar);
+  --color-chart-5: var(--chart-5);
+  --color-chart-4: var(--chart-4);
+  --color-chart-3: var(--chart-3);
+  --color-chart-2: var(--chart-2);
+  --color-chart-1: var(--chart-1);
+  --color-ring: var(--ring);
+  --color-input: var(--input);
+  --color-border: var(--border);
+  --color-destructive: var(--destructive);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent: var(--accent);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-muted: var(--muted);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary: var(--secondary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary: var(--primary);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-popover: var(--popover);
+  --color-card-foreground: var(--card-foreground);
+  --color-card: var(--card);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --radius-2xl: calc(var(--radius) + 8px);
+  --radius-3xl: calc(var(--radius) + 12px);
+  --radius-4xl: calc(var(--radius) + 16px);
+
+  /* Wealthsimple palette */
+  --color-ws-black: #1a1a1a;
+  --color-ws-dark: #2d2d2d;
+  --color-ws-green: #06b583;
+  --color-ws-green-light: #e6f9f3;
+  --color-ws-yellow: #f5a623;
+  --color-ws-yellow-light: #fef9ed;
+  --color-ws-red: #e85454;
+  --color-ws-red-light: #fdf0f0;
+  --color-ws-cream: #f5f2eb;
+  --color-ws-bg: #faf9f7;
+  --color-ws-card: #ffffff;
+  --color-ws-border: #e8e6e3;
+  --color-ws-text: #1a1a1a;
+  --color-ws-text-secondary: #6b6b6b;
+  --color-ws-text-tertiary: #9b9b9b;
+  --color-ws-hover: #f5f4f2;
+
+  /* Fan chart colours */
+  --color-fan-p90: #d4f0e7;
+  --color-fan-p75: #a8e2cf;
+  --color-fan-p50: #06b583;
+  --color-fan-p25: #f0dca0;
+  --color-fan-p10: #fce4c4;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+:root {
+  --radius: 0.625rem;
+  --background: #faf9f7;
+  --foreground: #1a1a1a;
+  --card: #ffffff;
+  --card-foreground: #1a1a1a;
+  --popover: #ffffff;
+  --popover-foreground: #1a1a1a;
+  --primary: #1a1a1a;
+  --primary-foreground: #ffffff;
+  --secondary: #f5f4f2;
+  --secondary-foreground: #1a1a1a;
+  --muted: #f5f4f2;
+  --muted-foreground: #6b6b6b;
+  --accent: #f5f4f2;
+  --accent-foreground: #1a1a1a;
+  --destructive: #e85454;
+  --border: #e8e6e3;
+  --input: #e8e6e3;
+  --ring: #1a1a1a;
+  --chart-1: #06b583;
+  --chart-2: #3b82f6;
+  --chart-3: #f5a623;
+  --chart-4: #8b5cf6;
+  --chart-5: #e85454;
+  --sidebar: #ffffff;
+  --sidebar-foreground: #1a1a1a;
+  --sidebar-primary: #1a1a1a;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #f5f4f2;
+  --sidebar-accent-foreground: #1a1a1a;
+  --sidebar-border: #e8e6e3;
+  --sidebar-ring: #1a1a1a;
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+/* Wealthsimple-style line chart animation */
+@keyframes draw-line {
+  from { stroke-dashoffset: 2000; }
+  to { stroke-dashoffset: 0; }
+}
+
+.animate-draw-line {
+  stroke-dasharray: 2000;
+  animation: draw-line 2s ease-out forwards;
+}
+
+/* Smooth scrollbar */
+.scrollbar-thin::-webkit-scrollbar {
+  width: 4px;
+}
+.scrollbar-thin::-webkit-scrollbar-track {
+  background: transparent;
+}
+.scrollbar-thin::-webkit-scrollbar-thumb {
+  background-color: #d4d4d4;
+  border-radius: 2px;
+}
+
+/* Hidden scrollbar - still scrollable */
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* Chat recording pulse */
+@keyframes recording-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(232, 84, 84, 0.4); }
+  50% { box-shadow: 0 0 0 12px rgba(232, 84, 84, 0); }
+}
+.animate-recording-pulse {
+  animation: recording-pulse 1.5s ease-in-out infinite;
 }
