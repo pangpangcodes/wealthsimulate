@@ -42,14 +42,44 @@ export default function ChatPanel({ onSimulationRequest }: ChatPanelProps) {
     const scenarioId = pendingAnalysis.id;
     const baseline = savedScenarios.find((s) => s.scenarioName === 'Current Path') ?? null;
 
-    // Detect sibling variant: another career-gap scenario with same gapMonths and year but different id
+    // Detect sibling variant: another scenario of the same type with matching key fields
     let siblingVariant = null;
-    const cc = pendingAnalysis.config.scenario.careerChange;
-    if (cc && cc.gapMonths > 0) {
+    const scenario = pendingAnalysis.config.scenario;
+    const cc = scenario.careerChange;
+    const hp = scenario.homePurchase;
+    const ch = scenario.children?.[0];
+    const mc = scenario.marketCrash;
+    const ct = scenario.contributionTiming;
+
+    if (hp) {
+      siblingVariant = savedScenarios.find((s) => {
+        if (s.id === pendingAnalysis.id) return false;
+        const shp = s.config.scenario.homePurchase;
+        return shp && shp.year === hp.year;
+      }) ?? null;
+    } else if (cc && cc.gapMonths > 0) {
       siblingVariant = savedScenarios.find((s) => {
         if (s.id === pendingAnalysis.id) return false;
         const scc = s.config.scenario.careerChange;
         return scc && scc.gapMonths === cc.gapMonths && scc.year === cc.year;
+      }) ?? null;
+    } else if (ch) {
+      siblingVariant = savedScenarios.find((s) => {
+        if (s.id === pendingAnalysis.id) return false;
+        const sch = s.config.scenario.children?.[0];
+        return sch && sch.year === ch.year;
+      }) ?? null;
+    } else if (mc) {
+      siblingVariant = savedScenarios.find((s) => {
+        if (s.id === pendingAnalysis.id) return false;
+        const smc = s.config.scenario.marketCrash;
+        return smc && smc.year === mc.year;
+      }) ?? null;
+    } else if (ct) {
+      siblingVariant = savedScenarios.find((s) => {
+        if (s.id === pendingAnalysis.id) return false;
+        const sct = s.config.scenario.contributionTiming;
+        return sct && sct !== ct;
       }) ?? null;
     }
 
