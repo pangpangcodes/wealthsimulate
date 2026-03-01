@@ -145,6 +145,9 @@ function simulateSinglePath(
 
   let currentIncome = profile.annualIncome;
   const baseAnnualExpenses = profile.monthlyExpenses * 12;
+  const retirementAnnualExpenses = scenario.desiredRetirementIncome
+    ?? profile.desiredRetirementIncome
+    ?? baseAnnualExpenses;
   let fixedNominalExpenses = 0; // mortgage payments (don't inflate)
   let isEmployed = true;
   let unemploymentMonths = 0;
@@ -351,7 +354,7 @@ function simulateSinglePath(
     } else {
       // ── Retired - withdraw for expenses, offset by government pensions ──
       const inflatedExpenses =
-        (baseAnnualExpenses + childrenExpenses) * inflationFactor
+        (retirementAnnualExpenses + childrenExpenses) * inflationFactor
         + fixedNominalExpenses;
 
       // Calculate government pension income (CPP/OAS/GIS)

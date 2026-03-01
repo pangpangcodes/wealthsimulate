@@ -81,7 +81,7 @@ export default function ProactiveInsights({ results, baseline, profile }: Proact
         </div>
         <div>
           <h3 className="text-sm font-semibold text-ws-text">What I noticed</h3>
-          <p className="text-xs text-ws-text-tertiary">Based on your accounts and simulations</p>
+          <p className="text-xs text-ws-text-tertiary">Based on your accounts and current path</p>
         </div>
       </div>
       <div className="space-y-2">

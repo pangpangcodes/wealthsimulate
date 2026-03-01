@@ -268,10 +268,10 @@ export default function SimulatorPage() {
                   </button>
                 </div>
               </div>
-            {/* Proactive AI Insights - hero position */}
-            {activeScenario && (
+            {/* Proactive AI Insights - always based on current path only */}
+            {baseline && (
               <ProactiveInsights
-                results={activeScenario}
+                results={baseline}
                 baseline={baseline}
                 profile={profile}
               />
