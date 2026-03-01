@@ -27,6 +27,7 @@ export default function ChatPanel({ onSimulationRequest }: ChatPanelProps) {
   const setModalAnalysisSummary = useSimulationStore((s) => s.setModalAnalysisSummary);
   const pendingChatPrompt = useSimulationStore((s) => s.pendingChatPrompt);
   const setChatPrompt = useSimulationStore((s) => s.setChatPrompt);
+  const openSimulationModal = useSimulationStore((s) => s.openSimulationModal);
   const analysisSentForId = useRef<string | null>(null);
 
   useEffect(() => {
@@ -167,7 +168,12 @@ export default function ChatPanel({ onSimulationRequest }: ChatPanelProps) {
               {SUGGESTED_PROMPTS.slice(0, 4).map((prompt) => (
                 <button
                   key={prompt.label}
-                  onClick={() => handleSend(prompt.prompt)}
+                  onClick={() => {
+                    handleSend(prompt.prompt);
+                    if (prompt.category === 'analysis') {
+                      openSimulationModal('Current Path');
+                    }
+                  }}
                   className="text-xs px-3.5 py-2 rounded-xl bg-ws-green-light text-ws-green text-left leading-snug hover:bg-ws-green/15 transition-colors"
                 >
                   {prompt.label}
