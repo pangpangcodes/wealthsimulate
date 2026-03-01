@@ -187,7 +187,28 @@ export function generateMetricCards(
       .reduce((sum, a) => sum + a.marketValue, 0);
     const monthlyExpenses = profile.monthlyExpenses;
     const runwayMonths = monthlyExpenses > 0 ? Math.floor(liquidSavings / monthlyExpenses) : 0;
-    const incomeLost = Math.round(profile.annualIncome * (cc.gapMonths / 12));
+
+    // Middle card: show retirement impact when baseline exists, otherwise income gap
+    let middleCard: MetricCardData;
+    if (baseline && baseline.id !== results.id) {
+      const impactAmount = baseline.summary.retirementNetWorthP50 - summary.retirementNetWorthP50;
+      const severity: MetricCardData['severity'] = impactAmount > 100_000 ? 'red'
+        : impactAmount > 50_000 ? 'amber' : 'green';
+      middleCard = {
+        label: 'Retirement Impact',
+        value: fmtWhole(impactAmount),
+        subtext: 'vs staying employed',
+        severity,
+      };
+    } else {
+      const incomeLost = Math.round(profile.annualIncome * (cc.gapMonths / 12));
+      middleCard = {
+        label: 'Income Gap',
+        value: fmtWhole(incomeLost),
+        subtext: `${cc.gapMonths}-month gap`,
+        severity: 'red',
+      };
+    }
 
     return [
       {
@@ -196,12 +217,7 @@ export function generateMetricCards(
         subtext: `${fmtWhole(liquidSavings)} liquid savings`,
         severity: runwayMonths < 3 ? 'red' : runwayMonths < 6 ? 'amber' : 'green',
       },
-      {
-        label: 'Income Gap',
-        value: fmtWhole(incomeLost),
-        subtext: `${cc.gapMonths}-month gap`,
-        severity: 'red',
-      },
+      middleCard,
       longTermImpactCard,
     ];
   }

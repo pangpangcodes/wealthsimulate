@@ -41,8 +41,20 @@ export default function ChatPanel({ onSimulationRequest }: ChatPanelProps) {
     analysisSentForId.current = pendingAnalysis.id;
     const scenarioId = pendingAnalysis.id;
     const baseline = savedScenarios.find((s) => s.scenarioName === 'Current Path') ?? null;
+
+    // Detect sibling variant: another career-gap scenario with same gapMonths and year but different id
+    let siblingVariant = null;
+    const cc = pendingAnalysis.config.scenario.careerChange;
+    if (cc && cc.gapMonths > 0) {
+      siblingVariant = savedScenarios.find((s) => {
+        if (s.id === pendingAnalysis.id) return false;
+        const scc = s.config.scenario.careerChange;
+        return scc && scc.gapMonths === cc.gapMonths && scc.year === cc.year;
+      }) ?? null;
+    }
+
     // Baseline runs silently (no chat messages) since it re-runs every mount
-    sendSimulationResults(pendingAnalysis, baseline, 'summary', { silent: isBaseline }).then((summary) => {
+    sendSimulationResults(pendingAnalysis, baseline, 'summary', { silent: isBaseline, siblingVariant }).then((summary) => {
       if (summary) {
         setModalAnalysisSummary(scenarioId, summary);
       }

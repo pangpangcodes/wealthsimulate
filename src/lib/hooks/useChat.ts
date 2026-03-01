@@ -52,7 +52,8 @@ ${goalLines ? `\nGOAL OUTCOMES:\n${goalLines}` : ''}`;
 
 export function buildAnalysisPayload(
   results: SimulationResults,
-  baseline: SimulationResults | null
+  baseline: SimulationResults | null,
+  siblingVariant?: SimulationResults | null
 ): string {
   let payload = condenseSummary(results);
 
@@ -117,6 +118,22 @@ NEAR-TERM CASH FLOW (career gap analysis):
 - Estimated months of runway at current expenses: ${monthlyRunway} months${year1Entry ? `\n- Net worth at Year 1 (most likely): $${Math.round(year1Entry.p50).toLocaleString()}` : ''}`;
   }
 
+  // Add sibling variant comparison for career-gap scenarios (e.g. "No EI" vs "With EI")
+  if (siblingVariant && siblingVariant.id !== results.id) {
+    const sibNw = siblingVariant.summary.retirementNetWorthP50;
+    const thisNw = results.summary.retirementNetWorthP50;
+    const nwDiff = thisNw - sibNw;
+    const sibAge = siblingVariant.summary.moneyLastsToAge;
+    const thisAge = results.summary.moneyLastsToAge;
+    payload += `
+
+SIBLING VARIANT COMPARISON ("${siblingVariant.scenarioName}" vs this "${results.scenarioName}"):
+- Retirement net worth difference: ${nwDiff >= 0 ? '+' : ''}$${Math.round(Math.abs(nwDiff)).toLocaleString()} (${nwDiff >= 0 ? 'this variant is better' : 'sibling is better'})
+- Money lasts to: Age ${sibAge} (${siblingVariant.scenarioName}) vs Age ${thisAge} (${results.scenarioName})
+- Sibling retirement net worth: $${Math.round(sibNw).toLocaleString()}
+- This retirement net worth: $${Math.round(thisNw).toLocaleString()}`;
+  }
+
   // Add home purchase analysis section
   const homePurchase = results.config.scenario.homePurchase;
   if (homePurchase) {
@@ -157,7 +174,7 @@ interface UseChatReturn {
   isLoading: boolean;
   error: string | null;
   sendMessage: (text: string) => Promise<void>;
-  sendSimulationResults: (results: SimulationResults, baseline?: SimulationResults | null, depth?: AnalysisDepth, options?: { silent?: boolean }) => Promise<string | null>;
+  sendSimulationResults: (results: SimulationResults, baseline?: SimulationResults | null, depth?: AnalysisDepth, options?: { silent?: boolean; siblingVariant?: SimulationResults | null }) => Promise<string | null>;
   injectAssistantMessage: (text: string) => void;
   stop: () => void;
   clearMessages: () => void;
@@ -393,13 +410,13 @@ export function useChat(onSimulationRequest?: (scenario: ScenarioOverrides) => v
     results: SimulationResults,
     baseline?: SimulationResults | null,
     depth?: AnalysisDepth,
-    options?: { silent?: boolean }
+    options?: { silent?: boolean; siblingVariant?: SimulationResults | null }
   ): Promise<string | null> => {
     if (isLoading) return null;
 
     const effectiveDepth = depth ?? 'detailed';
     const silent = options?.silent ?? false;
-    const payload = buildAnalysisPayload(results, baseline ?? null);
+    const payload = buildAnalysisPayload(results, baseline ?? null, options?.siblingVariant);
 
     const hiddenMessage: ChatMessage = {
       id: `msg-${Date.now()}-simresults`,
