@@ -105,6 +105,7 @@ export async function POST(request: NextRequest) {
     let iterations = 0;
     const maxIterations = 5;
 
+    // ── Agentic tool loop (non-streamed, fast) ──────────────────────────
     while (iterations < maxIterations) {
       iterations++;
 
@@ -153,8 +154,31 @@ export async function POST(request: NextRequest) {
       }
 
       if (!hasToolUse) {
-        // No more tool calls - we're done
-        break;
+        // No more tool calls - we're done with the loop.
+        // If we only went through one iteration with no tools, we already
+        // have the final text. If we went through multiple iterations,
+        // the last non-tool response is the final text. Either way, break
+        // and stream the final response below only if there WERE tool calls.
+        if (iterations === 1) {
+          // No tools were ever called - we need to re-do this call as a stream
+          break;
+        }
+        // Tools were called in earlier iterations; finalText is already set
+        // Send it as a stream-like SSE response for consistent client handling
+        const encoder = new TextEncoder();
+        const fakeStream = new ReadableStream({
+          start(controller) {
+            if (toolResults.length > 0) {
+              controller.enqueue(encoder.encode(`data: ${JSON.stringify({ type: 'tool_results', toolResults })}\n\n`));
+            }
+            controller.enqueue(encoder.encode(`data: ${JSON.stringify({ type: 'text', text: finalText })}\n\n`));
+            controller.enqueue(encoder.encode('data: [DONE]\n\n'));
+            controller.close();
+          },
+        });
+        return new Response(fakeStream, {
+          headers: { 'Content-Type': 'text/event-stream', 'Cache-Control': 'no-cache', Connection: 'keep-alive' },
+        });
       }
 
       // Add assistant response and tool results to messages for next iteration
@@ -168,9 +192,42 @@ export async function POST(request: NextRequest) {
       finalText = '';
     }
 
-    return NextResponse.json({
-      text: finalText,
-      toolResults,
+    // ── Stream the final response ─────────────────────────────────────
+    const stream = anthropic.messages.stream({
+      model: 'claude-sonnet-4-6',
+      max_tokens: 2048,
+      system: systemPrompt,
+      ...(isAnalysisRequest ? {} : { tools: CLAUDE_TOOLS }),
+      messages: currentMessages,
+    });
+
+    const encoder = new TextEncoder();
+    const readable = new ReadableStream({
+      async start(controller) {
+        try {
+          // Send tool results collected during the loop first
+          if (toolResults.length > 0) {
+            controller.enqueue(encoder.encode(`data: ${JSON.stringify({ type: 'tool_results', toolResults })}\n\n`));
+          }
+
+          for await (const event of stream) {
+            if (event.type === 'content_block_delta' && event.delta.type === 'text_delta') {
+              controller.enqueue(encoder.encode(`data: ${JSON.stringify({ type: 'delta', text: event.delta.text })}\n\n`));
+            }
+          }
+
+          controller.enqueue(encoder.encode('data: [DONE]\n\n'));
+          controller.close();
+        } catch (err) {
+          const msg = err instanceof Error ? err.message : 'Stream error';
+          controller.enqueue(encoder.encode(`data: ${JSON.stringify({ type: 'error', error: msg })}\n\n`));
+          controller.close();
+        }
+      },
+    });
+
+    return new Response(readable, {
+      headers: { 'Content-Type': 'text/event-stream', 'Cache-Control': 'no-cache', Connection: 'keep-alive' },
     });
   } catch (error) {
     console.error('Chat API error:', error);

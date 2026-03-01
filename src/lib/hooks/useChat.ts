@@ -156,7 +156,8 @@ export function useChat(onSimulationRequest?: (scenario: ScenarioOverrides) => v
 
   const callChatApi = useCallback(async (
     allMessages: ChatMessage[],
-    extraFlags?: { isAnalysis?: boolean; analysisDepth?: AnalysisDepth }
+    extraFlags?: { isAnalysis?: boolean; analysisDepth?: AnalysisDepth },
+    onStreamDelta?: (text: string) => void
   ) => {
     // Create a new AbortController for this request
     abortRef.current?.abort();
@@ -200,20 +201,56 @@ export function useChat(onSimulationRequest?: (scenario: ScenarioOverrides) => v
       throw new Error(errData.error || `HTTP ${res.status}`);
     }
 
-    const data = await res.json();
+    // Read SSE stream
+    const reader = res.body!.getReader();
+    const decoder = new TextDecoder();
+    let fullText = '';
+    let toolCalls: ToolCallInfo[] = [];
+    let buffer = '';
 
-    // Process tool results
-    const toolCalls: ToolCallInfo[] = (data.toolResults || []).map(
-      (tr: { toolName: string; input: Record<string, unknown>; output: Record<string, unknown> }) => ({
-        toolName: tr.toolName,
-        input: tr.input,
-        output: tr.output,
-        status: 'complete' as const,
-      })
-    );
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
 
-    // Check for simulation requests in tool results (skip during analysis to avoid loops)
-    for (const tr of data.toolResults || []) {
+      buffer += decoder.decode(value, { stream: true });
+      const lines = buffer.split('\n');
+      buffer = lines.pop() || '';
+
+      for (const line of lines) {
+        if (!line.startsWith('data: ')) continue;
+        const payload = line.slice(6);
+        if (payload === '[DONE]') continue;
+
+        try {
+          const event = JSON.parse(payload);
+          if (event.type === 'delta') {
+            fullText += event.text;
+            onStreamDelta?.(fullText);
+          } else if (event.type === 'text') {
+            // Non-streamed full text (from tool-loop path)
+            fullText = event.text;
+            onStreamDelta?.(fullText);
+          } else if (event.type === 'tool_results') {
+            toolCalls = (event.toolResults || []).map(
+              (tr: { toolName: string; input: Record<string, unknown>; output: Record<string, unknown> }) => ({
+                toolName: tr.toolName,
+                input: tr.input,
+                output: tr.output,
+                status: 'complete' as const,
+              })
+            );
+          } else if (event.type === 'error') {
+            throw new Error(event.error);
+          }
+        } catch (e) {
+          if (e instanceof SyntaxError) continue;
+          throw e;
+        }
+      }
+    }
+
+    // Process tool results for side effects
+    for (const tr of toolCalls) {
       if (
         !extraFlags?.isAnalysis &&
         tr.toolName === 'run_simulation' &&
@@ -255,7 +292,7 @@ export function useChat(onSimulationRequest?: (scenario: ScenarioOverrides) => v
     }
 
     return {
-      text: data.text || 'I processed your request.',
+      text: fullText || 'I processed your request.',
       toolCalls: toolCalls.length > 0 ? toolCalls : undefined,
       isAnalysis: extraFlags?.isAnalysis,
     };
@@ -278,17 +315,27 @@ export function useChat(onSimulationRequest?: (scenario: ScenarioOverrides) => v
 
     try {
       const allMessages = [...messages, userMessage];
-      const result = await callChatApi(allMessages);
+      const assistantId = `msg-${Date.now()}-assistant`;
 
-      const assistantMessage: ChatMessage = {
-        id: `msg-${Date.now()}-assistant`,
+      // Add a streaming placeholder message
+      setMessages((prev) => [...prev, {
+        id: assistantId,
         role: 'assistant',
-        content: result.text,
+        content: '',
         timestamp: Date.now(),
-        toolCalls: result.toolCalls,
-      };
+        isStreaming: true,
+      }]);
 
-      setMessages((prev) => [...prev, assistantMessage]);
+      const result = await callChatApi(allMessages, undefined, (text) => {
+        setMessages((prev) => prev.map((m) =>
+          m.id === assistantId ? { ...m, content: text } : m
+        ));
+      });
+
+      // Finalize the message
+      setMessages((prev) => prev.map((m) =>
+        m.id === assistantId ? { ...m, content: result.text, isStreaming: false, toolCalls: result.toolCalls } : m
+      ));
     } catch (e) {
       if (e instanceof DOMException && e.name === 'AbortError') {
         // User cancelled - just stop loading
@@ -336,20 +383,34 @@ export function useChat(onSimulationRequest?: (scenario: ScenarioOverrides) => v
 
     try {
       const contextMessages = silent ? [hiddenMessage] : [...messages, hiddenMessage];
-      const result = await callChatApi(contextMessages, { isAnalysis: true, analysisDepth: effectiveDepth });
+      const analysisId = `msg-${Date.now()}-analysis`;
 
       if (!silent) {
-        const analysisMessage: ChatMessage = {
-          id: `msg-${Date.now()}-analysis`,
+        setMessages((prev) => [...prev, {
+          id: analysisId,
           role: 'assistant',
-          content: result.text,
+          content: '',
           timestamp: Date.now(),
-          toolCalls: result.toolCalls,
+          isStreaming: true,
           isAnalysis: true,
           analysisDepth: effectiveDepth,
-        };
+        }]);
+      }
 
-        setMessages((prev) => [...prev, analysisMessage]);
+      const result = await callChatApi(
+        contextMessages,
+        { isAnalysis: true, analysisDepth: effectiveDepth },
+        silent ? undefined : (text) => {
+          setMessages((prev) => prev.map((m) =>
+            m.id === analysisId ? { ...m, content: text } : m
+          ));
+        }
+      );
+
+      if (!silent) {
+        setMessages((prev) => prev.map((m) =>
+          m.id === analysisId ? { ...m, content: result.text, isStreaming: false, toolCalls: result.toolCalls } : m
+        ));
       }
       return result.text;
     } catch (e) {
