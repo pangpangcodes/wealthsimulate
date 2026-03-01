@@ -31,7 +31,7 @@ export default function ReviewPage() {
             <div className="w-7 h-7 bg-ws-black rounded-md flex items-center justify-center">
               <TrendingUp size={14} className="text-white" />
             </div>
-            <span className="font-serif text-lg font-semibold tracking-tight">Simulate</span>
+            <span className="font-serif text-lg font-semibold tracking-tight">Wealthsimulate</span>
           </Link>
           <Link
             href="/simulator"
