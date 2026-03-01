@@ -176,7 +176,7 @@ export default function ChatPanel({ onSimulationRequest }: ChatPanelProps) {
               <ChatMessage key={msg.id} message={msg} onSuggestionClick={handleSend} />
             ))}
 
-            {isLoading && !visibleMessages.some((m) => m.isStreaming && m.content) && (
+            {isLoading && !visibleMessages.some((m) => m.isStreaming) && (
               <div className="flex justify-start">
                 <div className="w-7 h-7 rounded-full bg-ws-green/10 flex items-center justify-center mr-2 flex-shrink-0">
                   <Loader2 size={14} className="text-ws-green animate-spin" />

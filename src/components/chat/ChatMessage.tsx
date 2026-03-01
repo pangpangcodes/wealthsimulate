@@ -308,18 +308,20 @@ export default function ChatMessage({ message, onSuggestionClick }: ChatMessageP
                 {isSummary ? 'Summary' : 'Analysis of simulation results'}
               </Badge>
             )}
-            <div
-              className={`px-4 py-2.5 rounded-2xl rounded-bl-sm text-sm border ${
-                isAnalysis
-                  ? 'bg-white text-ws-text border-ws-green/20'
-                  : 'bg-white text-ws-text border-ws-border'
-              }`}
-              dangerouslySetInnerHTML={{
-                __html: isAnalysis && !isSummary
-                  ? renderAnalysisMarkdown(message.content)
-                  : renderMarkdown(message.content),
-              }}
-            />
+            {message.content && (
+              <div
+                className={`px-4 py-2.5 rounded-2xl rounded-bl-sm text-sm border ${
+                  isAnalysis
+                    ? 'bg-white text-ws-text border-ws-green/20'
+                    : 'bg-white text-ws-text border-ws-border'
+                }`}
+                dangerouslySetInnerHTML={{
+                  __html: isAnalysis && !isSummary
+                    ? renderAnalysisMarkdown(message.content)
+                    : renderMarkdown(message.content),
+                }}
+              />
+            )}
             {/* Decision prompt pills */}
             {suggestions.length > 0 && onSuggestionClick && (
               <div className="flex flex-wrap gap-1.5 mt-1">
