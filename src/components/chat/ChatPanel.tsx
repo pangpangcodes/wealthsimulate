@@ -55,7 +55,7 @@ export default function ChatPanel({ onSimulationRequest }: ChatPanelProps) {
     if (!pendingChatPrompt) return;
     const prompt = pendingChatPrompt;
     setChatPrompt(null);
-    shouldScrollRef.current = true;
+    scrollCountRef.current = 3;
     // If the prompt looks like a user question, send it directly
     if (prompt.endsWith('?') || prompt.startsWith('What')) {
       sendMessage(prompt);
@@ -72,10 +72,11 @@ export default function ChatPanel({ onSimulationRequest }: ChatPanelProps) {
 
   // Only auto-scroll when the user sends a message, not on every update.
   // This lets users read streamed responses from the start without being yanked to the bottom.
-  const shouldScrollRef = useRef(false);
+  // Uses a counter so the scroll survives multiple render cycles (message added, then loading dots appear).
+  const scrollCountRef = useRef(0);
   useEffect(() => {
-    if (shouldScrollRef.current) {
-      shouldScrollRef.current = false;
+    if (scrollCountRef.current > 0) {
+      scrollCountRef.current--;
       bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
     }
   }, [visibleMessages, isLoading]);
@@ -84,7 +85,7 @@ export default function ChatPanel({ onSimulationRequest }: ChatPanelProps) {
     (text: string) => {
       const trimmed = text.trim();
       if (!trimmed || isLoading) return;
-      shouldScrollRef.current = true;
+      scrollCountRef.current = 3;
       setInput('');
       if (inputRef.current) inputRef.current.style.height = 'auto';
       sendMessage(trimmed);
