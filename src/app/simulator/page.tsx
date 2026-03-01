@@ -7,7 +7,6 @@ import { useSimulationStore } from '@/lib/store/simulation-store';
 import { useSimulation } from '@/lib/hooks/useSimulation';
 import type { ScenarioOverrides } from '@/lib/types';
 import NetWorthTimeline from '@/components/dashboard/NetWorthTimeline';
-import PortfolioBreakdown from '@/components/dashboard/PortfolioBreakdown';
 import AccountsList from '@/components/dashboard/AccountsList';
 import ScenarioCompare from '@/components/dashboard/ScenarioCompare';
 import ScenarioMetricCards from '@/components/dashboard/ScenarioMetricCards';
@@ -299,9 +298,6 @@ export default function SimulatorPage() {
                 />
               )}
             </div>
-
-            {/* Portfolio allocation */}
-            <PortfolioBreakdown />
 
             {/* Accounts */}
             <AccountsList />

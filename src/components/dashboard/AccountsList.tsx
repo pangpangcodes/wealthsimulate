@@ -6,6 +6,7 @@ import { isInvestmentAccount } from '@/lib/types';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronDown } from 'lucide-react';
 import TransactionsList from './TransactionsList';
+import PortfolioBreakdown from './PortfolioBreakdown';
 
 function formatCurrency(value: number): string {
   return new Intl.NumberFormat('en-CA', {
@@ -130,6 +131,9 @@ export default function AccountsList() {
             </motion.div>
           ))}
         </div>
+
+        {/* Portfolio Allocation */}
+        <PortfolioBreakdown />
 
         {/* Investment Total */}
         <div className="px-5 py-3.5 border-t border-ws-border bg-ws-bg rounded-b-xl flex items-center justify-between">

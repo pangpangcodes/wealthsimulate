@@ -168,8 +168,8 @@ export default function PortfolioBreakdown() {
   );
 
   return (
-    <div className="bg-white rounded-xl border border-ws-border p-5">
-      <h3 className="text-base font-medium text-ws-text mb-4">Portfolio Allocation</h3>
+    <div className="px-5 py-4 border-t border-ws-border">
+      <h4 className="text-sm font-medium text-ws-text-secondary mb-4">Portfolio Allocation</h4>
 
       <div className="flex items-center gap-6">
         {/* Donut */}
