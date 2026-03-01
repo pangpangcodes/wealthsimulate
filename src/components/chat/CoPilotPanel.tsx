@@ -14,7 +14,6 @@ export default function CoPilotPanel({ onSimulationRequest }: CoPilotPanelProps)
       {/* Header */}
       <div className="flex items-center gap-2 px-4 py-3 border-b border-ws-border flex-shrink-0">
         <div className="w-2 h-2 rounded-full bg-ws-green animate-pulse" />
-        <span className="text-sm font-semibold text-ws-text">Your co-pilot</span>
         <Sparkles size={14} className="text-ws-green ml-auto" />
       </div>
 

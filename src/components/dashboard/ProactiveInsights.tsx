@@ -80,7 +80,7 @@ export default function ProactiveInsights({ results, baseline, profile }: Proact
           <Sparkles size={16} className="text-ws-green" />
         </div>
         <div>
-          <h3 className="text-sm font-semibold text-ws-text">What I noticed</h3>
+          <h3 className="text-sm font-semibold text-ws-text">Here's what I see</h3>
           <p className="text-xs text-ws-text-tertiary">Based on your accounts and current path</p>
         </div>
       </div>
