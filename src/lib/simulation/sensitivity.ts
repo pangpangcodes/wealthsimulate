@@ -78,15 +78,14 @@ const PERTURBATIONS: PerturbConfig[] = [
     perturbation: '+/- 2 percentage points',
     metric: 'retirementNetWorthP50',
     metricLabel: 'Net Worth at Retirement',
-    // Shift inflation rate as proxy for shifting all asset class means
-    // Lower inflation = higher real returns, higher inflation = lower real returns
-    applyLow: (s, p) => ({
+    // Directly shift all asset class expected returns
+    applyLow: (s) => ({
       ...s,
-      inflationRate: (s.inflationRate ?? p.inflationRate) + 0.02,
+      returnAdjustment: (s.returnAdjustment ?? 0) - 0.02,
     }),
-    applyHigh: (s, p) => ({
+    applyHigh: (s) => ({
       ...s,
-      inflationRate: Math.max(0, (s.inflationRate ?? p.inflationRate) - 0.02),
+      returnAdjustment: (s.returnAdjustment ?? 0) + 0.02,
     }),
   },
   {

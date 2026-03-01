@@ -41,6 +41,7 @@ export interface ScenarioOverrides {
   };
   contributionTiming?: 'annual' | 'monthly';
   inflationRate?: number;
+  returnAdjustment?: number; // shift all asset class expected returns by this amount (e.g. +0.02 = +2pp)
   lifeExpectancy?: number;
   desiredRetirementIncome?: number;
 }

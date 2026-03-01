@@ -1,8 +1,8 @@
-import type { SimulationResults, FinancialProfile } from '@/lib/types';
+import type { SimulationResults, FinancialProfile, ScenarioOverrides } from '@/lib/types';
 import type { AssetClass } from '@/lib/types';
 import { ASSET_CLASS_PARAMS } from './distributions';
 import { ANNUAL_FEE_RATE } from './engine';
-import { estimateMarginalRate, CONTRIBUTION_LIMITS } from './canadian-tax';
+import { estimateMarginalRate, calculateIncomeTax, CONTRIBUTION_LIMITS } from './canadian-tax';
 import { GIS_INCOME_THRESHOLD_SINGLE } from './government-pensions';
 
 export interface Insight {
@@ -23,6 +23,19 @@ export interface PhasedInsights {
   accumulation: Insight[];
   drawdown: Insight[];
   impacts: Insight[];
+}
+
+// ─── Scenario-Aware Types ──────────────────────────────────────────────────
+
+export type ScenarioFocus = 'home-purchase' | 'career-gap' | 'children' | 'market-crash'
+  | 'retirement-age' | 'savings-change' | 'contribution-timing' | 'retirement';
+
+export interface MetricCardData {
+  label: string;
+  value: string;
+  subtext?: string;
+  severity?: 'green' | 'amber' | 'red';
+  delta?: { label: string; positive: boolean };
 }
 
 function fmtK(value: number): string {
@@ -85,6 +98,162 @@ function mortgagePayment(principal: number, annualRate: number, years: number): 
   );
 }
 
+// ─── Scenario Detection ────────────────────────────────────────────────────
+
+export function detectScenarioFocus(
+  scenario: ScenarioOverrides,
+  profile: FinancialProfile
+): ScenarioFocus {
+  // Priority order: home-purchase > career-gap > children > market-crash >
+  // retirement-age > savings-change > contribution-timing > retirement
+  if (scenario.homePurchase) return 'home-purchase';
+  if (scenario.careerChange && scenario.careerChange.gapMonths > 0) return 'career-gap';
+  if (scenario.children && scenario.children.length > 0) return 'children';
+  if (scenario.marketCrash) return 'market-crash';
+  if (scenario.retirementAge !== undefined && scenario.retirementAge !== profile.retirementAge) return 'retirement-age';
+  if (scenario.annualSavingsRate !== undefined && scenario.annualSavingsRate !== profile.annualSavingsRate) return 'savings-change';
+  if (scenario.contributionTiming === 'monthly') return 'contribution-timing';
+  return 'retirement';
+}
+
+// ─── Scenario-Aware Metric Cards ───────────────────────────────────────────
+
+export function generateMetricCards(
+  results: SimulationResults,
+  baseline?: SimulationResults | null
+): MetricCardData[] {
+  const { config, summary } = results;
+  const { profile, scenario } = config;
+  const focus = detectScenarioFocus(scenario, profile);
+
+  const lifeExpectancy = scenario.lifeExpectancy ?? profile.lifeExpectancy;
+  const moneyLastsToAge = summary.moneyLastsToAge;
+  const baselineMoneyLasts = baseline && baseline.id !== results.id
+    ? baseline.summary.moneyLastsToAge : null;
+  const moneyLastsDelta = baselineMoneyLasts !== null
+    ? moneyLastsToAge - baselineMoneyLasts : null;
+
+  // Long-term impact card - shared across Tier 1 scenarios
+  const longTermImpactCard: MetricCardData = {
+    label: 'Long-Term Impact',
+    value: moneyLastsToAge >= lifeExpectancy ? `Age ${lifeExpectancy}+` : `Age ${moneyLastsToAge}`,
+    subtext: 'Money lasts to',
+    severity: moneyLastsToAge >= lifeExpectancy ? 'green'
+      : moneyLastsToAge >= lifeExpectancy - 5 ? 'amber' : 'red',
+    ...(moneyLastsDelta !== null ? {
+      delta: { label: `${moneyLastsDelta >= 0 ? '+' : ''}${moneyLastsDelta} yrs vs baseline`, positive: moneyLastsDelta >= 0 },
+    } : {}),
+  };
+
+  if (focus === 'home-purchase') {
+    const hp = scenario.homePurchase!;
+    const downPayment = hp.price * hp.downPaymentPercent;
+    const mortgageAmount = hp.price - downPayment;
+    const monthlyMtg = mortgagePayment(mortgageAmount, 0.05, 25);
+
+    // Liquid savings: non-registered + chequing + TFSA + FHSA
+    const liquidSavings = profile.accounts
+      .filter((a) => a.type === 'non-registered' || a.type === 'chequing' || a.type === 'tfsa' || a.type === 'fhsa')
+      .reduce((sum, a) => sum + a.marketValue, 0);
+    const gap = downPayment - liquidSavings;
+
+    // Monthly take-home (after tax)
+    const annualTax = calculateIncomeTax(profile.annualIncome, profile.province);
+    const monthlyTakeHome = (profile.annualIncome - annualTax) / 12;
+    const mortgagePercent = monthlyTakeHome > 0 ? (monthlyMtg / monthlyTakeHome) * 100 : 0;
+
+    return [
+      {
+        label: 'Down Payment',
+        value: fmtWhole(downPayment),
+        subtext: gap > 0 ? `${fmtWhole(gap)} short of liquid savings` : 'Covered by liquid savings',
+        severity: gap > 0 ? 'red' : 'green',
+      },
+      {
+        label: 'Monthly Mortgage',
+        value: `$${Math.round(monthlyMtg).toLocaleString()}/mo`,
+        subtext: `${mortgagePercent.toFixed(0)}% of take-home`,
+        severity: mortgagePercent < 30 ? 'green' : mortgagePercent <= 40 ? 'amber' : 'red',
+      },
+      longTermImpactCard,
+    ];
+  }
+
+  if (focus === 'career-gap') {
+    const cc = scenario.careerChange!;
+    // Liquid savings: non-registered + chequing + TFSA
+    const liquidSavings = profile.accounts
+      .filter((a) => a.type === 'non-registered' || a.type === 'chequing' || a.type === 'tfsa')
+      .reduce((sum, a) => sum + a.marketValue, 0);
+    const monthlyExpenses = profile.monthlyExpenses;
+    const runwayMonths = monthlyExpenses > 0 ? Math.floor(liquidSavings / monthlyExpenses) : 0;
+    const incomeLost = Math.round(profile.annualIncome * (cc.gapMonths / 12));
+
+    return [
+      {
+        label: 'Emergency Runway',
+        value: `${runwayMonths} months`,
+        subtext: `${fmtWhole(liquidSavings)} liquid savings`,
+        severity: runwayMonths < 3 ? 'red' : runwayMonths < 6 ? 'amber' : 'green',
+      },
+      {
+        label: 'Income Gap',
+        value: fmtWhole(incomeLost),
+        subtext: `${cc.gapMonths}-month gap`,
+        severity: 'red',
+      },
+      longTermImpactCard,
+    ];
+  }
+
+  // Default retirement cards - for Tier 2 and Tier 3
+  const retirementAge = scenario.retirementAge ?? profile.retirementAge;
+  const retirementNetWorthP50 = summary.retirementNetWorthP50;
+  const retirementIncome = summary.retirementAnnualIncomeP50;
+  const incomeReplacement = summary.incomeReplacementRatio;
+  const incomeTarget = summary.incomeReplacementTarget ?? profile.annualIncome;
+
+  const isBaseline = !baseline || baseline.id === results.id;
+  const netWorthDelta = !isBaseline
+    ? retirementNetWorthP50 - baseline!.summary.retirementNetWorthP50
+    : null;
+
+  return [
+    {
+      label: 'Money Lasts To',
+      value: moneyLastsToAge >= lifeExpectancy ? `Age ${lifeExpectancy}+` : `Age ${moneyLastsToAge}`,
+      severity: moneyLastsToAge >= lifeExpectancy ? 'green'
+        : moneyLastsToAge >= lifeExpectancy - 5 ? 'amber' : 'red',
+      ...(moneyLastsDelta !== null ? {
+        delta: { label: `${moneyLastsDelta >= 0 ? '+' : ''}${moneyLastsDelta} yrs vs baseline`, positive: moneyLastsDelta >= 0 },
+      } : {}),
+    },
+    {
+      label: 'At Retirement',
+      value: fmtWhole(retirementNetWorthP50),
+      ...(netWorthDelta !== null ? {
+        delta: { label: `${netWorthDelta >= 0 ? '+' : ''}${fmtWhole(netWorthDelta)} vs baseline`, positive: netWorthDelta >= 0 },
+      } : {}),
+    },
+    {
+      label: 'Retirement Income',
+      value: fmtMonthly(retirementIncome),
+      subtext: `${(incomeReplacement * 100).toFixed(0)}% of ${fmtWhole(incomeTarget)} income`,
+    },
+  ];
+}
+
+function fmtMonthly(annualValue: number): string {
+  const monthly = annualValue / 12;
+  const abs = Math.abs(monthly);
+  const sign = monthly < 0 ? '-' : '';
+  if (abs >= 1_000_000) return `${sign}$${(abs / 1_000_000).toFixed(1)}M/mo`;
+  if (abs >= 1_000) return `${sign}$${(abs / 1_000).toFixed(1)}K/mo`;
+  return `${sign}$${abs.toFixed(0)}/mo`;
+}
+
+// ─── Scenario-Aware Verdict ────────────────────────────────────────────────
+
 export function generateVerdict(results: SimulationResults): Verdict {
   const moneyLastsToAge = results.summary.moneyLastsToAge;
   const lifeExpectancy = results.config.profile.lifeExpectancy;
@@ -110,6 +279,212 @@ export function generateVerdict(results: SimulationResults): Verdict {
       .reduce((sum, a) => sum + a.marketValue, 0);
     thinGapBuffer = liquidBalance < cc.gapMonths * profile.monthlyExpenses;
   }
+
+  const focus = detectScenarioFocus(scenario, profile);
+
+  // ── Home Purchase verdict ──
+  if (focus === 'home-purchase') {
+    const hp = scenario.homePurchase!;
+    const downPayment = hp.price * hp.downPaymentPercent;
+    const mortgageAmount = hp.price - downPayment;
+    const monthlyMtg = mortgagePayment(mortgageAmount, 0.05, 25);
+    const liquidSavings = profile.accounts
+      .filter((a) => a.type === 'non-registered' || a.type === 'chequing' || a.type === 'tfsa' || a.type === 'fhsa')
+      .reduce((sum, a) => sum + a.marketValue, 0);
+    const gap = downPayment - liquidSavings;
+    const annualTax = calculateIncomeTax(profile.annualIncome, profile.province);
+    const monthlyTakeHome = (profile.annualIncome - annualTax) / 12;
+    const mortgagePercent = monthlyTakeHome > 0 ? (monthlyMtg / monthlyTakeHome) * 100 : 0;
+
+    if (gap > 0) {
+      return {
+        severity: 'red',
+        message: `You're ${fmtWhole(gap)} short on the down payment`,
+        subtext: `${fmtWhole(downPayment)} needed vs ${fmtWhole(liquidSavings)} in liquid savings`,
+        chatPrompt: 'What savings rate would cover the down payment in time?',
+      };
+    }
+    if (mortgagePercent > 35 || moneyLastsToAge < retirementAge) {
+      return {
+        severity: 'amber',
+        message: 'This purchase is a stretch',
+        subtext: mortgagePercent > 35
+          ? `Mortgage takes ${mortgagePercent.toFixed(0)}% of take-home pay`
+          : `Money runs out at age ${moneyLastsToAge}, before retirement`,
+        chatPrompt: 'What price range would be more comfortable?',
+      };
+    }
+    return {
+      severity: 'green',
+      message: 'This home purchase looks manageable',
+      subtext: `Down payment covered, mortgage is ${mortgagePercent.toFixed(0)}% of take-home`,
+      chatPrompt: 'What if I chose a different price or down payment?',
+    };
+  }
+
+  // ── Career Gap verdict ──
+  if (focus === 'career-gap') {
+    const cc2 = scenario.careerChange!;
+    const liquidSavings = profile.accounts
+      .filter((a) => a.type === 'non-registered' || a.type === 'chequing' || a.type === 'tfsa')
+      .reduce((sum, a) => sum + a.marketValue, 0);
+    const runwayMonths = profile.monthlyExpenses > 0 ? Math.floor(liquidSavings / profile.monthlyExpenses) : 0;
+
+    if (runwayMonths < cc2.gapMonths) {
+      return {
+        severity: 'red',
+        message: `A ${cc2.gapMonths}-month gap would drain your savings`,
+        subtext: `Only ${runwayMonths} months of runway vs ${cc2.gapMonths} months needed`,
+        chatPrompt: 'What if I cut expenses during the gap?',
+      };
+    }
+    if (moneyLastsToAge < lifeExpectancy) {
+      return {
+        severity: 'amber',
+        message: `You can weather ${cc2.gapMonths} months, but retirement takes a hit`,
+        subtext: `Money lasts to age ${moneyLastsToAge} instead of ${lifeExpectancy}+`,
+        chatPrompt: 'How can I recover the lost ground after the gap?',
+      };
+    }
+    return {
+      severity: 'green',
+      message: `Your savings can absorb a ${cc2.gapMonths}-month income gap`,
+      subtext: `${runwayMonths} months of runway, long-term outlook intact`,
+      chatPrompt: 'What if the gap extends longer?',
+    };
+  }
+
+  // ── Children verdict ──
+  if (focus === 'children') {
+    const child = scenario.children![0];
+    const costStr = fmtWhole(child.annualCostIncrease);
+    const baseMessage = `A child in ${child.year} adds ${costStr}/year for 18 years`;
+
+    if (moneyLastsToAge >= lifeExpectancy) {
+      return {
+        severity: 'green',
+        message: baseMessage,
+        subtext: 'Long-term finances remain on track',
+        chatPrompt: 'What savings rate would offset the cost of a child?',
+      };
+    }
+    if (moneyLastsToAge >= lifeExpectancy - 5) {
+      return {
+        severity: 'amber',
+        message: baseMessage,
+        subtext: `Money lasts to age ${moneyLastsToAge} - close, but a small adjustment helps`,
+        chatPrompt: 'What savings rate would offset the cost of a child?',
+      };
+    }
+    return {
+      severity: 'red',
+      message: baseMessage,
+      subtext: `Money lasts to age ${moneyLastsToAge} - the added cost creates a significant gap`,
+      chatPrompt: 'What savings rate would offset the cost of a child?',
+    };
+  }
+
+  // ── Market Crash verdict ──
+  if (focus === 'market-crash') {
+    const mc = scenario.marketCrash!;
+    const severityLabel = mc.severity.charAt(0).toUpperCase() + mc.severity.slice(1);
+    const baseMessage = `A ${mc.severity} crash in ${mc.year} tests your portfolio's resilience`;
+
+    if (moneyLastsToAge >= lifeExpectancy) {
+      return {
+        severity: 'green',
+        message: baseMessage,
+        subtext: `${severityLabel} crash absorbed - money still lasts to age ${lifeExpectancy}+`,
+        chatPrompt: 'How long would it take to recover from a crash?',
+      };
+    }
+    if (moneyLastsToAge >= lifeExpectancy - 5) {
+      return {
+        severity: 'amber',
+        message: baseMessage,
+        subtext: `Money lasts to age ${moneyLastsToAge} - the crash shaves a few years`,
+        chatPrompt: 'How long would it take to recover from a crash?',
+      };
+    }
+    return {
+      severity: 'red',
+      message: baseMessage,
+      subtext: `Money lasts to age ${moneyLastsToAge} - a ${mc.severity} crash causes lasting damage`,
+      chatPrompt: 'How long would it take to recover from a crash?',
+    };
+  }
+
+  // ── Retirement Age verdict ──
+  if (focus === 'retirement-age') {
+    const diff = profile.retirementAge - (scenario.retirementAge ?? profile.retirementAge);
+    const isEarly = diff > 0;
+    const absDiff = Math.abs(diff);
+    const baseMessage = isEarly
+      ? `Retiring ${absDiff} years early means ${absDiff} fewer saving years and ${absDiff} more withdrawal years`
+      : `Working ${absDiff} more years adds saving time and shortens withdrawals`;
+
+    if (moneyLastsToAge >= lifeExpectancy) {
+      return { severity: 'green', message: baseMessage, subtext: `Money lasts to age ${lifeExpectancy}+` };
+    }
+    if (moneyLastsToAge >= lifeExpectancy - 5) {
+      return {
+        severity: 'amber',
+        message: baseMessage,
+        subtext: `Money lasts to age ${moneyLastsToAge} - close but tight`,
+        chatPrompt: 'What savings rate would make this work?',
+      };
+    }
+    return {
+      severity: 'red',
+      message: baseMessage,
+      subtext: `Money lasts to age ${moneyLastsToAge} - a significant gap to cover`,
+      chatPrompt: 'What savings rate would make this work?',
+    };
+  }
+
+  // ── Savings Change verdict ──
+  if (focus === 'savings-change') {
+    const currentRate = Math.round(profile.annualSavingsRate * 100);
+    const newRate = Math.round((scenario.annualSavingsRate ?? profile.annualSavingsRate) * 100);
+    const baseMessage = `Saving ${newRate}% instead of ${currentRate}%`;
+
+    if (moneyLastsToAge >= lifeExpectancy) {
+      return {
+        severity: 'green',
+        message: baseMessage,
+        subtext: `Money lasts to age ${lifeExpectancy}+`,
+        chatPrompt: 'What savings rate would I need to reach my goal?',
+      };
+    }
+    return {
+      severity: moneyLastsToAge >= lifeExpectancy - 5 ? 'amber' : 'red',
+      message: baseMessage,
+      subtext: `Money lasts to age ${moneyLastsToAge}`,
+      chatPrompt: 'What savings rate would I need to reach my goal?',
+    };
+  }
+
+  // ── Contribution Timing verdict ──
+  if (focus === 'contribution-timing') {
+    const baseMessage = 'Monthly contributions vs annual lump sum';
+
+    if (moneyLastsToAge >= lifeExpectancy) {
+      return {
+        severity: 'green',
+        message: baseMessage,
+        subtext: `Money lasts to age ${lifeExpectancy}+`,
+        chatPrompt: 'How much does monthly DCA actually help?',
+      };
+    }
+    return {
+      severity: moneyLastsToAge >= lifeExpectancy - 5 ? 'amber' : 'red',
+      message: baseMessage,
+      subtext: `Money lasts to age ${moneyLastsToAge}`,
+      chatPrompt: 'How much does monthly DCA actually help?',
+    };
+  }
+
+  // ── Default Retirement verdict (Tier 3) ──
 
   if (moneyLastsToAge >= lifeExpectancy) {
     // Money lasts long-term, but flag short-term cash flow problems

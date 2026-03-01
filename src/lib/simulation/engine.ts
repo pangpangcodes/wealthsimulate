@@ -201,7 +201,7 @@ function simulateSinglePath(
 
     // ── Generate market returns ──
 
-    let returns = generateCorrelatedReturns(rand);
+    let returns = generateCorrelatedReturns(rand, scenario.returnAdjustment);
 
     // Apply market crash if applicable
     if (scenario.marketCrash && calendarYear === scenario.marketCrash.year) {

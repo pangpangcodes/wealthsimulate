@@ -127,8 +127,10 @@ const CHOLESKY_L = choleskyDecomposition(CORRELATION_MATRIX);
 
 // ─── Correlated Returns ─────────────────────────────────────────────────────
 
-/** Generate correlated annual returns for all asset classes */
-export function generateCorrelatedReturns(rand?: () => number): Record<AssetClass, number> {
+/** Generate correlated annual returns for all asset classes.
+ *  @param rand - seeded PRNG function
+ *  @param returnAdjustment - shift applied to every asset class mu (e.g. +0.02 = +2pp) */
+export function generateCorrelatedReturns(rand?: () => number, returnAdjustment?: number): Record<AssetClass, number> {
   // Generate independent standard normals
   const z: number[] = ASSET_CLASS_ORDER.map(() => randomNormal(rand));
 
@@ -145,7 +147,7 @@ export function generateCorrelatedReturns(rand?: () => number): Record<AssetClas
   for (let i = 0; i < ASSET_CLASS_ORDER.length; i++) {
     const ac = ASSET_CLASS_ORDER[i];
     const params = ASSET_CLASS_PARAMS[ac];
-    const mu = params.expectedReturn;
+    const mu = params.expectedReturn + (returnAdjustment ?? 0);
     const sigma = params.volatility;
 
     // Log-normal: R = exp((mu - sigma^2/2) + sigma * Z) - 1

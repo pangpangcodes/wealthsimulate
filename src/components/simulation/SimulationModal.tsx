@@ -6,7 +6,7 @@ import { useSimulationStore } from '@/lib/store/simulation-store';
 import NetWorthTimeline from '@/components/dashboard/NetWorthTimeline';
 import SimulationBreakdown from '@/components/simulation/SimulationBreakdown';
 import SensitivityChart from '@/components/simulation/SensitivityChart';
-import { generateInsights, generateVerdict } from '@/lib/simulation/insights';
+import { generateInsights, generateVerdict, generateMetricCards } from '@/lib/simulation/insights';
 import { runSensitivityAnalysis, type SensitivityResult } from '@/lib/simulation/sensitivity';
 
 function renderInlineMd(s: string): string {
@@ -16,22 +16,6 @@ function renderInlineMd(s: string): string {
   return s;
 }
 
-function formatCurrency(value: number): string {
-  const abs = Math.abs(value);
-  const sign = value < 0 ? '-' : '';
-  if (abs >= 1_000_000) return `${sign}$${(abs / 1_000_000).toFixed(1)}M`;
-  if (abs >= 1_000) return `${sign}$${(abs / 1_000).toFixed(0)}K`;
-  return `${sign}$${abs.toFixed(0)}`;
-}
-
-function formatMonthly(annualValue: number): string {
-  const monthly = annualValue / 12;
-  const abs = Math.abs(monthly);
-  const sign = monthly < 0 ? '-' : '';
-  if (abs >= 1_000_000) return `${sign}$${(abs / 1_000_000).toFixed(1)}M/mo`;
-  if (abs >= 1_000) return `${sign}$${(abs / 1_000).toFixed(1)}K/mo`;
-  return `${sign}$${abs.toFixed(0)}/mo`;
-}
 
 export default function SimulationPanel() {
   const simulationModalOpen = useSimulationStore((s) => s.simulationModalOpen);
@@ -125,25 +109,16 @@ export default function SimulationPanel() {
   const showResults = !isSimulating && currentResults;
 
   const scenarioName = currentResults?.scenarioName ?? simulationModalScenarioName ?? 'Simulation';
-  const retirementIncomeP50 = currentResults?.summary.retirementAnnualIncomeP50 ?? 0;
-  const incomeReplacement = currentResults?.summary.incomeReplacementRatio ?? 0;
-  const incomeTarget = currentResults?.summary.incomeReplacementTarget ?? currentResults?.config.profile.annualIncome ?? 0;
-  const moneyLastsToAge = currentResults?.summary.moneyLastsToAge ?? 0;
   const lifeExpectancy = currentResults?.config.profile.lifeExpectancy ?? 90;
   const retirementAge = currentResults?.config.scenario.retirementAge ?? currentResults?.config.profile.retirementAge ?? 65;
   const currentAge = currentResults?.config.profile.age ?? 30;
-  const retirementNetWorthP50 = currentResults?.summary.retirementNetWorthP50 ?? 0;
   const validPaths = currentResults?.validPaths ?? 1000;
 
   // Baseline comparison
   const baseline = savedScenarios.find((s) => s.scenarioName === 'Current Path');
-  const isBaseline = !currentResults || !baseline || currentResults.id === baseline.id;
-  const moneyLastsDelta = !isBaseline
-    ? (currentResults!.summary.moneyLastsToAge - baseline!.summary.moneyLastsToAge)
-    : null;
-  const netWorthDelta = !isBaseline
-    ? (currentResults!.summary.retirementNetWorthP50 - baseline!.summary.retirementNetWorthP50)
-    : null;
+
+  // Dynamic metric cards
+  const metricCards = currentResults ? generateMetricCards(currentResults, baseline) : [];
 
   const progressPercent = Math.round(simulationProgress * 100);
 
@@ -259,38 +234,27 @@ export default function SimulationPanel() {
 
           {/* Metric cards - 3 columns */}
           <div className="grid grid-cols-3 gap-2.5">
-            {/* Money Lasts To */}
-            <div className="bg-ws-bg rounded-lg px-3 py-3 text-center">
-              <p className={`text-sm font-semibold ${moneyLastsToAge >= lifeExpectancy ? 'text-ws-green' : moneyLastsToAge >= lifeExpectancy - 5 ? 'text-amber-600' : 'text-ws-red'}`}>
-                {moneyLastsToAge >= lifeExpectancy ? `Age ${lifeExpectancy}+` : `Age ${moneyLastsToAge}`}
-              </p>
-              <p className="text-[10px] text-ws-text-secondary mt-0.5">Money Lasts To</p>
-              {moneyLastsDelta !== null && (
-                <p className={`text-[10px] mt-0.5 ${moneyLastsDelta >= 0 ? 'text-ws-green' : 'text-ws-red'}`}>
-                  {moneyLastsDelta >= 0 ? '+' : ''}{moneyLastsDelta} yrs vs baseline
+            {metricCards.map((card) => (
+              <div key={card.label} className="bg-ws-bg rounded-lg px-3 py-3 text-center">
+                <p className={`text-sm font-semibold ${
+                  card.severity === 'green' ? 'text-ws-green'
+                    : card.severity === 'amber' ? 'text-amber-600'
+                    : card.severity === 'red' ? 'text-ws-red'
+                    : 'text-ws-text'
+                }`}>
+                  {card.value}
                 </p>
-              )}
-            </div>
-
-            {/* At Retirement */}
-            <div className="bg-ws-bg rounded-lg px-3 py-3 text-center">
-              <p className="text-sm font-semibold text-ws-text">{formatCurrency(retirementNetWorthP50)}</p>
-              <p className="text-[10px] text-ws-text-secondary mt-0.5">At Retirement</p>
-              {netWorthDelta !== null && (
-                <p className={`text-[10px] mt-0.5 ${netWorthDelta >= 0 ? 'text-ws-green' : 'text-ws-red'}`}>
-                  {netWorthDelta >= 0 ? '+' : ''}{formatCurrency(netWorthDelta)} vs baseline
-                </p>
-              )}
-            </div>
-
-            {/* Retirement Income */}
-            <div className="bg-ws-bg rounded-lg px-3 py-3 text-center">
-              <p className="text-sm font-semibold text-ws-text">{formatMonthly(retirementIncomeP50)}</p>
-              <p className="text-[10px] text-ws-text-secondary mt-0.5">Retirement Income</p>
-              <p className="text-[10px] text-ws-text-secondary mt-0.5">
-                {(incomeReplacement * 100).toFixed(0)}% of {formatCurrency(incomeTarget)} income
-              </p>
-            </div>
+                <p className="text-[10px] text-ws-text-secondary mt-0.5">{card.label}</p>
+                {card.subtext && (
+                  <p className="text-[10px] text-ws-text-secondary mt-0.5">{card.subtext}</p>
+                )}
+                {card.delta && (
+                  <p className={`text-[10px] mt-0.5 ${card.delta.positive ? 'text-ws-green' : 'text-ws-red'}`}>
+                    {card.delta.label}
+                  </p>
+                )}
+              </div>
+            ))}
           </div>
 
           {/* Chart */}
