@@ -381,7 +381,7 @@ export function useChat(onSimulationRequest?: (scenario: ScenarioOverrides) => v
     };
 
     if (!silent) setMessages((prev) => [...prev, hiddenMessage]);
-    setIsLoading(true);
+    if (!silent) setIsLoading(true);
     setError(null);
 
     try {
@@ -433,7 +433,7 @@ export function useChat(onSimulationRequest?: (scenario: ScenarioOverrides) => v
       ]);
       return null;
     } finally {
-      setIsLoading(false);
+      if (!silent) setIsLoading(false);
     }
   }, [isLoading, messages, callChatApi]);
 
