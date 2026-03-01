@@ -556,10 +556,13 @@ function processReverseEngineerGoal(
     const variable = input.variable as SolvableVariable;
     const targetAge = input.target_age as number | undefined;
 
+    const scenario: ScenarioOverrides = { name: 'Goal Solver' };
+    if (input.retirement_age) scenario.retirementAge = input.retirement_age as number;
+
     const result = solveForGoal({
       variable,
       profile,
-      scenario: { name: 'Goal Solver' },
+      scenario,
       targetAge,
     });
 

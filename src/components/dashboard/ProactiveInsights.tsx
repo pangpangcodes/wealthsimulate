@@ -67,7 +67,11 @@ export default function ProactiveInsights({ results, baseline, profile }: Proact
   );
 
   const allInsights = useMemo(
-    () => (verdictCard ? [verdictCard, ...insights] : insights),
+    () => {
+      const SEVERITY_ORDER: Record<InsightSeverity, number> = { warning: 0, opportunity: 1, info: 2 };
+      const combined = verdictCard ? [verdictCard, ...insights] : insights;
+      return combined.sort((a, b) => SEVERITY_ORDER[a.severity] - SEVERITY_ORDER[b.severity]);
+    },
     [verdictCard, insights]
   );
 

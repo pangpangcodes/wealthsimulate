@@ -447,14 +447,14 @@ export function generateVerdict(results: SimulationResults): Verdict {
         severity: 'amber',
         message: baseMessage,
         subtext: `Money lasts to age ${moneyLastsToAge} - close but tight`,
-        chatPrompt: 'What savings rate would make this work?',
+        chatPrompt: 'What are my options to make this work?',
       };
     }
     return {
       severity: 'red',
       message: baseMessage,
       subtext: `Money lasts to age ${moneyLastsToAge} - a significant gap to cover`,
-      chatPrompt: 'What savings rate would make this work?',
+      chatPrompt: 'What are my options to make this work?',
     };
   }
 

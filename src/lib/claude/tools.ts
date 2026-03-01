@@ -75,7 +75,7 @@ export const CLAUDE_TOOLS: Anthropic.Tool[] = [
         },
         desired_retirement_income: {
           type: 'number',
-          description: 'Override desired annual retirement income in dollars',
+          description: 'Override desired annual retirement spending in today\'s dollars. IMPORTANT: When the user says "X% of my spending", calculate X% of the Baseline Retirement Spending from their profile (NOT their income). For example, if baseline spending is $40,800/year and the user says 70%, pass 28560.',
         },
         contribution_timing: {
           type: 'string',
@@ -208,6 +208,10 @@ export const CLAUDE_TOOLS: Anthropic.Tool[] = [
         target_age: {
           type: 'number',
           description: 'Target age for money to last to (defaults to life expectancy from profile)',
+        },
+        retirement_age: {
+          type: 'number',
+          description: 'Retirement age context for the solver (e.g., if solving savings rate for early retirement at 55). Defaults to profile retirement age.',
         },
       },
       required: ['variable'],
