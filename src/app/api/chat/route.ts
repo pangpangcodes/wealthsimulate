@@ -101,15 +101,16 @@ export async function POST(request: NextRequest) {
       input: Record<string, unknown>;
       output: Record<string, unknown>;
     }> = [];
-    let finalText = '';
     let iterations = 0;
     const maxIterations = 5;
 
     // ── Agentic tool loop (non-streamed, fast) ──────────────────────────
+    // Each iteration checks for tool_use. When tools are found, process
+    // them and continue. When no tools, the text is the final response
+    // but was fetched non-streamed, so we discard it and re-stream below.
     while (iterations < maxIterations) {
       iterations++;
 
-      // During analysis, don't offer tools - Claude already has the data
       const response = await anthropic.messages.create({
         model: 'claude-sonnet-4-6',
         max_tokens: 2048,
@@ -118,86 +119,38 @@ export async function POST(request: NextRequest) {
         messages: currentMessages,
       });
 
-      // Process response content blocks
       const assistantContent: Anthropic.ContentBlock[] = response.content;
-      let hasToolUse = false;
+      const toolUseBlocks = assistantContent.filter(
+        (b): b is Anthropic.ToolUseBlock => b.type === 'tool_use'
+      );
+
+      if (toolUseBlocks.length === 0) break; // No tools - stream final response below
+
       const toolUseResults: Anthropic.ToolResultBlockParam[] = [];
-
-      for (const block of assistantContent) {
-        if (block.type === 'text') {
-          finalText += block.text;
-        } else if (block.type === 'tool_use') {
-          hasToolUse = true;
-          const toolResult = processToolCall(
-            block.name,
-            block.input as Record<string, unknown>,
-            profile,
-            savedScenarioNames,
-            savedScenarioSummaries
-          );
-
-          // Validate tool output: check for NaN/undefined in key numeric fields
-          const validated = validateToolOutput(toolResult);
-
-          toolResults.push({
-            toolName: block.name,
-            input: block.input as Record<string, unknown>,
-            output: validated,
-          });
-
-          toolUseResults.push({
-            type: 'tool_result',
-            tool_use_id: block.id,
-            content: JSON.stringify(validated),
-          });
-        }
+      for (const block of toolUseBlocks) {
+        const validated = validateToolOutput(
+          processToolCall(block.name, block.input as Record<string, unknown>, profile, savedScenarioNames, savedScenarioSummaries)
+        );
+        toolResults.push({ toolName: block.name, input: block.input as Record<string, unknown>, output: validated });
+        toolUseResults.push({ type: 'tool_result', tool_use_id: block.id, content: JSON.stringify(validated) });
       }
 
-      if (!hasToolUse) {
-        // No more tool calls - we're done with the loop.
-        // If we only went through one iteration with no tools, we already
-        // have the final text. If we went through multiple iterations,
-        // the last non-tool response is the final text. Either way, break
-        // and stream the final response below only if there WERE tool calls.
-        if (iterations === 1) {
-          // No tools were ever called - we need to re-do this call as a stream
-          break;
-        }
-        // Tools were called in earlier iterations; finalText is already set
-        // Send it as a stream-like SSE response for consistent client handling
-        const encoder = new TextEncoder();
-        const fakeStream = new ReadableStream({
-          start(controller) {
-            if (toolResults.length > 0) {
-              controller.enqueue(encoder.encode(`data: ${JSON.stringify({ type: 'tool_results', toolResults })}\n\n`));
-            }
-            controller.enqueue(encoder.encode(`data: ${JSON.stringify({ type: 'text', text: finalText })}\n\n`));
-            controller.enqueue(encoder.encode('data: [DONE]\n\n'));
-            controller.close();
-          },
-        });
-        return new Response(fakeStream, {
-          headers: { 'Content-Type': 'text/event-stream', 'Cache-Control': 'no-cache', Connection: 'keep-alive' },
-        });
-      }
-
-      // Add assistant response and tool results to messages for next iteration
       currentMessages = [
         ...currentMessages,
         { role: 'assistant', content: assistantContent },
         { role: 'user', content: toolUseResults },
       ];
-
-      // Reset final text as Claude will generate new text after tool results
-      finalText = '';
     }
 
-    // ── Stream the final response ─────────────────────────────────────
+    // ── Stream the final text response ────────────────────────────────
+    // If tools were used, currentMessages already has tool results appended
+    // and we need a fresh call. If no tools, we re-stream the same call
+    // (one wasted non-streamed call, but gives real streaming UX).
     const stream = anthropic.messages.stream({
       model: 'claude-sonnet-4-6',
       max_tokens: 2048,
       system: systemPrompt,
-      ...(isAnalysisRequest ? {} : { tools: CLAUDE_TOOLS }),
+      // Don't offer tools on the final streaming call - we just want text
       messages: currentMessages,
     });
 
@@ -205,7 +158,6 @@ export async function POST(request: NextRequest) {
     const readable = new ReadableStream({
       async start(controller) {
         try {
-          // Send tool results collected during the loop first
           if (toolResults.length > 0) {
             controller.enqueue(encoder.encode(`data: ${JSON.stringify({ type: 'tool_results', toolResults })}\n\n`));
           }

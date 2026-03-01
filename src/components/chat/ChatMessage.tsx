@@ -277,21 +277,26 @@ export default function ChatMessage({ message, onSuggestionClick }: ChatMessageP
           <>
             {message.toolCalls && message.toolCalls.length > 0 && (
               <div className="flex flex-wrap gap-1.5 mb-1">
-                {message.toolCalls.map((tc, i) => (
-                  <Badge
-                    key={i}
-                    variant="secondary"
-                    className="text-[10px] font-normal gap-1 bg-ws-green-light text-ws-green border-0"
-                  >
-                    <Sparkles size={10} />
-                    {tc.toolName === 'run_simulation' && 'Ran simulation'}
-                    {tc.toolName === 'compare_scenarios' && 'Compared scenarios'}
-                    {tc.toolName === 'get_portfolio_summary' && 'Analyzed portfolio'}
-                    {tc.toolName === 'add_goal' && 'Added goal'}
-                    {tc.toolName === 'update_profile' && 'Updated profile'}
-                    {tc.toolName === 'explain_tradeoff' && 'Tradeoff analysis'}
-                  </Badge>
-                ))}
+                {message.toolCalls.map((tc, i) => {
+                  const scenarioName = tc.toolName === 'run_simulation' && tc.input?.scenario_name
+                    ? String(tc.input.scenario_name)
+                    : null;
+                  return (
+                    <Badge
+                      key={i}
+                      variant="secondary"
+                      className="text-[10px] font-normal gap-1 bg-ws-green-light text-ws-green border-0"
+                    >
+                      <Sparkles size={10} />
+                      {tc.toolName === 'run_simulation' && (scenarioName ? `Simulated: ${scenarioName}` : 'Ran simulation')}
+                      {tc.toolName === 'compare_scenarios' && 'Compared scenarios'}
+                      {tc.toolName === 'get_portfolio_summary' && 'Analyzed portfolio'}
+                      {tc.toolName === 'add_goal' && 'Added goal'}
+                      {tc.toolName === 'update_profile' && 'Updated profile'}
+                      {tc.toolName === 'explain_tradeoff' && 'Tradeoff analysis'}
+                    </Badge>
+                  );
+                })}
               </div>
             )}
             {isAnalysis && (
