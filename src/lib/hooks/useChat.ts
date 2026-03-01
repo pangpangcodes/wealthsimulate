@@ -443,6 +443,7 @@ export function useChat(onSimulationRequest?: (scenario: ScenarioOverrides) => v
           isStreaming: true,
           isAnalysis: true,
           analysisDepth: effectiveDepth,
+          scenarioName: results.scenarioName,
         }]);
       }
 

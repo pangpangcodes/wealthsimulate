@@ -305,7 +305,9 @@ export default function ChatMessage({ message, onSuggestionClick }: ChatMessageP
                 className="text-[10px] font-normal gap-1 bg-ws-green-light text-ws-green border-0 w-fit mb-1"
               >
                 <BarChart3 size={10} />
-                {isSummary ? 'Summary' : 'Analysis of simulation results'}
+                {isSummary
+                  ? (message.scenarioName ? message.scenarioName : 'Summary')
+                  : 'Analysis of simulation results'}
               </Badge>
             )}
             {message.content && (

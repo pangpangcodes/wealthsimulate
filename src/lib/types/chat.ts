@@ -25,6 +25,9 @@ export interface ChatMessage {
 
   // Controls whether this analysis is a brief summary or detailed breakdown
   analysisDepth?: AnalysisDepth;
+
+  // Scenario name for distinguishing analysis messages
+  scenarioName?: string;
 }
 
 export interface ToolCallInfo {
