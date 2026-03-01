@@ -163,8 +163,7 @@ export default function ChatPanel({ onSimulationRequest }: ChatPanelProps) {
                 <button
                   key={prompt.label}
                   onClick={() => handleSend(prompt.prompt)}
-                  disabled={isLoading}
-                  className="text-xs px-3.5 py-2 rounded-xl bg-ws-green-light text-ws-green text-left leading-snug hover:bg-ws-green/15 transition-colors disabled:opacity-40"
+                  className="text-xs px-3.5 py-2 rounded-xl bg-ws-green-light text-ws-green text-left leading-snug hover:bg-ws-green/15 transition-colors"
                 >
                   {prompt.label}
                 </button>

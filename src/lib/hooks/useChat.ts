@@ -139,6 +139,7 @@ const CHAT_STORAGE_KEY = 'ws-chat-messages-v1';
 export function useChat(onSimulationRequest?: (scenario: ScenarioOverrides) => void): UseChatReturn {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [isSendingMessage, setIsSendingMessage] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const profile = useProfileStore((s) => s.profile);
   const savedScenarios = useSimulationStore((s) => s.savedScenarios);
@@ -300,7 +301,7 @@ export function useChat(onSimulationRequest?: (scenario: ScenarioOverrides) => v
 
   const sendMessage = useCallback(async (text: string) => {
     const trimmed = text.trim();
-    if (!trimmed || isLoading) return;
+    if (!trimmed || isSendingMessage) return;
 
     const userMessage: ChatMessage = {
       id: `msg-${Date.now()}-user`,
@@ -311,6 +312,7 @@ export function useChat(onSimulationRequest?: (scenario: ScenarioOverrides) => v
 
     setMessages((prev) => [...prev, userMessage]);
     setIsLoading(true);
+    setIsSendingMessage(true);
     setError(null);
 
     try {
@@ -354,8 +356,9 @@ export function useChat(onSimulationRequest?: (scenario: ScenarioOverrides) => v
       ]);
     } finally {
       setIsLoading(false);
+      setIsSendingMessage(false);
     }
-  }, [isLoading, messages, callChatApi]);
+  }, [isSendingMessage, messages, callChatApi]);
 
   const sendSimulationResults = useCallback(async (
     results: SimulationResults,
@@ -447,6 +450,7 @@ export function useChat(onSimulationRequest?: (scenario: ScenarioOverrides) => v
     abortRef.current?.abort();
     abortRef.current = null;
     setIsLoading(false);
+    setIsSendingMessage(false);
   }, []);
 
   const clearMessages = useCallback(() => {
