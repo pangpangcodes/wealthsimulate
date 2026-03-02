@@ -184,3 +184,14 @@ With Wealthsimple API access, Wealthsimulate could:
 - **Goal tracking integration** - Connect to Wealthsimple Goals for unified planning
 
 The statement upload flow in this prototype demonstrates the data bridge - showing how real account data transforms the simulation from hypothetical to personal.
+
+## Future Exploration: Server-Side Response Validation
+
+The two-phase AI architecture ensures Claude never generates financial numbers - a deterministic engine produces all figures, and Claude can only cite what it receives. This is enforced through multi-layer prompt guardrails, but these are instructions to the model, not code-level guarantees.
+
+A future hardening step could add server-side validation to the chat API response stream:
+
+- **Phase 1 responses** (post-tool-call, pre-results) should never contain dollar amounts or percentages. A regex scan before streaming could strip or flag violations with minimal latency, since Phase 1 responses are capped at 2-3 sentences.
+- **Phase 2 responses** (post-simulation-results) legitimately contain numbers. Validation here would require cross-referencing cited figures against the `[SIMULATION_RESULTS]` payload - significantly more complex and higher false-positive risk.
+
+Phase 1 validation is the clearest win: narrow scope, simple implementation, and it covers the primary fabrication risk surface.
