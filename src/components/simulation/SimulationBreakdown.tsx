@@ -31,7 +31,7 @@ function Section({ title, items }: { title: string; items: Insight[] }) {
 }
 
 export default function SimulationBreakdown({ insights, currentAge, retirementAge, lifeExpectancy }: Props) {
-  const [open, setOpen] = useState(true);
+  const [open, setOpen] = useState(false);
 
   const hasContent = insights.accumulation.length > 0 || insights.drawdown.length > 0 || insights.impacts.length > 0;
   if (!hasContent) return null;
