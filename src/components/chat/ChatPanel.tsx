@@ -174,7 +174,7 @@ export default function ChatPanel({ onSimulationRequest }: ChatPanelProps) {
                 I've been analyzing your finances
               </p>
               <p className="text-xs text-ws-text-tertiary">
-                Ask me anything, or try one of these
+                Ask a what-if question, or try one of these
               </p>
             </div>
 
