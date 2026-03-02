@@ -13,7 +13,7 @@ import {
   Sparkles,
   Database,
   Mic,
-  Globe,
+  CalendarClock,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { StatementUpload } from '@/components/onboarding/StatementUpload';
@@ -272,11 +272,11 @@ export default function OnboardingPage() {
                           className="bg-blue-50 border border-blue-100 p-3 rounded-xl flex items-start gap-3"
                         >
                           <div className="p-1.5 bg-blue-100 rounded-lg text-blue-700">
-                            <Globe size={14} />
+                            <CalendarClock size={14} />
                           </div>
                           <div>
-                            <div className="text-sm font-medium text-blue-900">Home Bias Detected</div>
-                            <div className="text-xs text-blue-700/80 mt-0.5">45% of your equity is Canadian.</div>
+                            <div className="text-sm font-medium text-blue-900">Contribution Timing</div>
+                            <div className="text-xs text-blue-700/80 mt-0.5">Lump sum vs periodic - which grows more?</div>
                           </div>
                         </motion.div>
                       </div>
