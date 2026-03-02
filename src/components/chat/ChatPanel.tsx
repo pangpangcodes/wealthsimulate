@@ -75,11 +75,13 @@ export default function ChatPanel({ onSimulationRequest }: ChatPanelProps) {
         const smc = s.config.scenario.marketCrash;
         return smc && smc.year === mc.year;
       }) ?? null;
-    } else if (ct) {
+    } else {
+      // Contribution timing: match annual vs monthly (undefined defaults to 'annual')
+      const effectiveCt = ct ?? 'annual';
       siblingVariant = savedScenarios.find((s) => {
         if (s.id === pendingAnalysis.id) return false;
-        const sct = s.config.scenario.contributionTiming;
-        return sct && sct !== ct;
+        const sct = s.config.scenario.contributionTiming ?? 'annual';
+        return sct !== effectiveCt;
       }) ?? null;
     }
 
