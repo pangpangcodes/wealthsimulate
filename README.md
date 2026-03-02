@@ -8,7 +8,7 @@ Most Canadians don't have access to the probabilistic financial planning that we
 
 ## The Solution
 
-Wealthsimulate lets you explore financial decisions in natural language. Upload your Wealthsimple statement (or start with example data), ask "what if" questions - buy a home, change careers, retire early - and see the impact across 1,000 simulated futures with real Canadian tax rules.
+Wealthsimulate lets you explore financial decisions in natural language. Connect your Wealthsimple account (or start with example data), ask "what if" questions - buy a home, change careers, retire early - and see the impact across 1,000 simulated futures with real Canadian tax rules.
 
 The AI doesn't just answer questions. It runs full Monte Carlo simulations, compares scenarios side by side, and explains trade-offs in plain English - not financial jargon.
 
@@ -19,6 +19,8 @@ The AI doesn't just answer questions. It runs full Monte Carlo simulations, comp
 - **Correlated asset returns** via Cholesky decomposition across 10 asset classes (Canadian/US/international/emerging equities, Canadian/international/high-yield bonds, gold, cash, real estate)
 - **30+ year projections** from current age through life expectancy (default 90)
 - **Life event probabilities** - random job loss (2% annually), medical emergencies, and windfalls vary per path to show the distribution of outcomes
+- **Goal-backward solver** - binary search over controllable variables (savings rate, retirement age) to find the value where money lasts through life expectancy
+- **Sensitivity analysis** - perturbs each variable independently (11 simulation runs) to show which levers have the most impact on outcomes
 
 ### Canadian Tax Rules
 - **Federal + provincial tax brackets** for all 13 provinces and territories (2025 rates)
@@ -26,7 +28,7 @@ The AI doesn't just answer questions. It runs full Monte Carlo simulations, comp
 - **Contribution limits** - TFSA $7k, RRSP 18% of income (max $31,560), FHSA $8k
 - **Government pensions** - CPP (adjustable start age 60-65 with early/late penalties), OAS at 65 with clawback above ~$92k
 
-### AI Chat
+### AI Co-pilot
 - **Two-phase architecture** - Claude interprets the question and builds scenario parameters (Phase 1), then analyzes real simulation results (Phase 2). AI never invents financial numbers
 - **Natural language scenarios** - "What if I buy a home in 2028 for $500k?" becomes a structured simulation with mortgage payments, down payment, and opportunity cost
 - **Scenario comparison** - ask Claude to compare any saved scenarios side by side
@@ -44,15 +46,17 @@ The AI doesn't just answer questions. It runs full Monte Carlo simulations, comp
 ### Dashboard
 - **Net worth timeline** - p10 (worst case), p50 (most likely), p90 (best case) with scenario overlay
 - **Scenario metric cards** - retirement income, income replacement %, money lasts to age X, delta vs. baseline
+- **Sensitivity analysis** - "What moves the needle" display showing the impact of perturbing key variables (savings rate, retirement age, market returns, inflation, life expectancy) via real simulation runs
 - **Portfolio breakdown** by asset class
 - **Holdings list** with individual positions
 - **Accounts list** with balances across registered/non-registered types
 - **Transactions list** with categorized spending (groceries, dining, transport, utilities, subscriptions, shopping, entertainment, health, insurance)
+- **Proactive insights** - AI-generated warnings, opportunities, and contextual prompts based on your profile and simulation results
 - **Model assumptions panel** - view and understand the parameters behind each simulation
 - **Inline editing** - edit numeric values directly in the dashboard
 
 ### Onboarding
-- **Statement upload** - drag-and-drop a Wealthsimple PDF or screenshot; Claude vision extracts accounts, holdings, and balances
+- **Account connection** - connect your Wealthsimple account to sync accounts, holdings, and balances (prototype uses drag-and-drop statement upload with Claude vision extraction)
 - **Example profile** - start immediately with seed data (Alex, 33, Ontario, $59k income)
 - **4-step review wizard** - employment, finances, goals, and risk tolerance with animated transitions
 - **Auto-detection** - infers biweekly income from paycheck patterns and derives monthly expenses from transaction categories
@@ -64,7 +68,7 @@ The AI doesn't just answer questions. It runs full Monte Carlo simulations, comp
 - **Canadian tax-aware** - Federal + provincial brackets, RRSP/TFSA/FHSA/RESP contribution logic, registered account withdrawal priority optimization
 - **Two-phase AI architecture** - Claude analyzes the question and builds scenario parameters, then the deterministic engine runs the simulation. AI never invents financial numbers
 - **Client-side Web Worker** - 1,000-path Monte Carlo runs in a background thread without blocking the UI
-- **Statement parsing via Claude vision** - Upload a Wealthsimple PDF or screenshot and Claude extracts your actual portfolio data
+- **Statement parsing via Claude vision** - Prototype uses PDF/screenshot upload with Claude vision to extract portfolio data; production would use direct Wealthsimple API sync
 
 ## Tech Stack
 
@@ -110,7 +114,10 @@ src/
 │   │   ├── canadian-tax.ts             # Federal + provincial tax brackets
 │   │   ├── government-pensions.ts      # CPP / OAS calculation
 │   │   ├── scenarios.ts                # Life event probabilities
-│   │   └── insights.ts                 # Summary generation and verdicts
+│   │   ├── insights.ts                 # Summary generation and verdicts
+│   │   ├── sensitivity.ts              # "What moves the needle" perturbation analysis
+│   │   ├── goal-solver.ts              # Goal-based parameter solver
+│   │   └── limitations.ts              # Model limitation disclosures
 │   ├── analysis/
 │   │   ├── income-detection.ts         # Infer income from transaction patterns
 │   │   └── expense-detection.ts        # Derive monthly expenses by category
@@ -151,14 +158,17 @@ src/
 │   │   ├── HoldingsList.tsx            # Individual positions
 │   │   ├── TransactionsList.tsx        # Categorized spending
 │   │   ├── MetricCard.tsx              # Reusable metric display
-│   │   └── ModelAssumptions.tsx        # Simulation parameters panel
+│   │   ├── ModelAssumptions.tsx        # Simulation parameters panel
+│   │   └── ProactiveInsights.tsx      # Contextual AI prompt suggestions
 │   ├── simulation/
 │   │   ├── SimulationModal.tsx         # Full-screen results breakdown
-│   │   └── SimulationBreakdown.tsx     # Detailed results view
+│   │   ├── SimulationBreakdown.tsx     # Collapsible assumptions breakdown
+│   │   └── SensitivityChart.tsx        # "What moves the needle" perturbation display
 │   ├── chat/
 │   │   ├── ChatBubble.tsx             # Floating toggle button
 │   │   ├── ChatPanel.tsx              # Message list, input, voice
-│   │   └── ChatMessage.tsx            # AI/user message rendering
+│   │   ├── ChatMessage.tsx            # AI/user message rendering
+│   │   └── CoPilotPanel.tsx           # AI co-pilot sidebar panel
 │   └── shared/
 │       └── Disclaimer.tsx             # "Not financial advice" banner
 └── workers/
