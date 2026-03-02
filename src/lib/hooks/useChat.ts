@@ -189,7 +189,7 @@ export function useChat(onSimulationRequest?: (scenario: ScenarioOverrides) => v
   const callChatApi = useCallback(async (
     allMessages: ChatMessage[],
     extraFlags?: { isAnalysis?: boolean; analysisDepth?: AnalysisDepth },
-    onStreamDelta?: (text: string) => void
+    onStreamDelta?: (text: string) => void,
   ) => {
     // Create a new AbortController for this request
     abortRef.current?.abort();
@@ -233,12 +233,27 @@ export function useChat(onSimulationRequest?: (scenario: ScenarioOverrides) => v
       throw new Error(errData.error || `HTTP ${res.status}`);
     }
 
-    // Read SSE stream
+    // Read SSE stream with RAF-batched UI updates
     const reader = res.body!.getReader();
     const decoder = new TextDecoder();
     let fullText = '';
     let toolCalls: ToolCallInfo[] = [];
     let buffer = '';
+    let rafId: number | null = null;
+    let pendingFlush = false;
+
+    const flushToUi = () => {
+      rafId = null;
+      pendingFlush = false;
+      onStreamDelta?.(fullText);
+    };
+
+    const scheduleFlush = () => {
+      if (!pendingFlush && onStreamDelta) {
+        pendingFlush = true;
+        rafId = requestAnimationFrame(flushToUi);
+      }
+    };
 
     while (true) {
       const { done, value } = await reader.read();
@@ -257,11 +272,10 @@ export function useChat(onSimulationRequest?: (scenario: ScenarioOverrides) => v
           const event = JSON.parse(payload);
           if (event.type === 'delta') {
             fullText += event.text;
-            onStreamDelta?.(fullText);
+            scheduleFlush();
           } else if (event.type === 'text') {
-            // Non-streamed full text (from tool-loop path)
             fullText = event.text;
-            onStreamDelta?.(fullText);
+            scheduleFlush();
           } else if (event.type === 'tool_results') {
             toolCalls = (event.toolResults || []).map(
               (tr: { toolName: string; input: Record<string, unknown>; output: Record<string, unknown> }) => ({
@@ -280,6 +294,10 @@ export function useChat(onSimulationRequest?: (scenario: ScenarioOverrides) => v
         }
       }
     }
+
+    // Flush any remaining content
+    if (rafId !== null) cancelAnimationFrame(rafId);
+    onStreamDelta?.(fullText);
 
     // Process tool results for side effects
     for (const tr of toolCalls) {

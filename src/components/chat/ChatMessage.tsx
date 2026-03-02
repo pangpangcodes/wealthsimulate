@@ -1,5 +1,6 @@
 'use client';
 
+import { memo } from 'react';
 import type { ChatMessage as ChatMessageType } from '@/lib/types';
 import { Badge } from '@/components/ui/badge';
 import { Bot, Sparkles, BarChart3 } from 'lucide-react';
@@ -249,7 +250,7 @@ interface ChatMessageProps {
   onSuggestionClick?: (text: string) => void;
 }
 
-export default function ChatMessage({ message, onSuggestionClick }: ChatMessageProps) {
+function ChatMessage({ message, onSuggestionClick }: ChatMessageProps) {
   const isUser = message.role === 'user';
   const isAnalysis = message.isAnalysis;
   const isSummary = isAnalysis && message.analysisDepth === 'summary';
@@ -344,3 +345,5 @@ export default function ChatMessage({ message, onSuggestionClick }: ChatMessageP
     </div>
   );
 }
+
+export default memo(ChatMessage);
