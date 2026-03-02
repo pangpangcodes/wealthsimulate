@@ -25,7 +25,7 @@ export default function ReviewStepGoals({ onNext, onBack }: ReviewStepGoalsProps
     >
       <h2 className="font-serif text-2xl text-ws-text mb-1">Investment Goals</h2>
       <p className="text-sm text-ws-text-secondary mb-6">
-        Review your goals below. Edit anything that needs updating, then confirm & continue.
+        Review your goals below, then confirm & continue. Editing coming soon.
       </p>
 
       <div className="space-y-3">
@@ -35,6 +35,7 @@ export default function ReviewStepGoals({ onNext, onBack }: ReviewStepGoalsProps
           editValue={profile.retirementAge}
           min={50}
           max={75}
+          disabled
           onChange={(v) => updateField('retirementAge', Math.round(v as number))}
         />
 
@@ -48,6 +49,7 @@ export default function ReviewStepGoals({ onNext, onBack }: ReviewStepGoalsProps
           max={500000}
           step={1000}
           insight="In today's dollars, based on your current annual expenses"
+          disabled
           onChange={(v) => updateField('desiredRetirementIncome', Math.round(v as number))}
         />
 
@@ -57,6 +59,7 @@ export default function ReviewStepGoals({ onNext, onBack }: ReviewStepGoalsProps
           editValue={profile.lifeExpectancy}
           min={70}
           max={105}
+          disabled
           onChange={(v) => updateField('lifeExpectancy', Math.round(v as number))}
         />
       </div>

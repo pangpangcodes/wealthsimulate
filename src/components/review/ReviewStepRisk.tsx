@@ -50,7 +50,7 @@ export default function ReviewStepRisk({ onComplete, onBack }: ReviewStepRiskPro
     >
       <h2 className="font-serif text-2xl text-ws-text mb-1">Risk Profile</h2>
       <p className="text-sm text-ws-text-secondary mb-6">
-        Review your portfolio and assumptions below. Edit anything that needs updating, then finish.
+        Review your portfolio and assumptions below, then finish. Editing coming soon.
       </p>
 
       {/* Portfolio summary */}
@@ -107,6 +107,7 @@ export default function ReviewStepRisk({ onComplete, onBack }: ReviewStepRiskPro
           max={100}
           step={5}
           insight="Most Canadians receive about 60-70% of the maximum CPP"
+          disabled
           onChange={(v) => updateField('cppBenefitRate', (v as number) / 100)}
         />
       </div>

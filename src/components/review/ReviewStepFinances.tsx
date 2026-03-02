@@ -1,18 +1,12 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo } from 'react';
 import { motion } from 'framer-motion';
-import { Plus, Sparkles, X } from 'lucide-react';
+import { Sparkles } from 'lucide-react';
 import { useProfileStore } from '@/lib/store/profile-store';
 import { deriveMonthlyExpenses } from '@/lib/analysis/expense-detection';
 import { calculateIncomeTax } from '@/lib/simulation/canadian-tax';
 import ReviewConfirmField from './ReviewConfirmField';
-
-interface CustomExpense {
-  id: string;
-  label: string;
-  amount: number;
-}
 
 interface ReviewStepFinancesProps {
   onNext: () => void;
@@ -23,11 +17,6 @@ export default function ReviewStepFinances({ onNext, onBack }: ReviewStepFinance
   const profile = useProfileStore((s) => s.profile);
   const updateField = useProfileStore((s) => s.updateField);
   const getBankingAccounts = useProfileStore((s) => s.getBankingAccounts);
-
-  const [customExpenses, setCustomExpenses] = useState<CustomExpense[]>([]);
-  const [isAdding, setIsAdding] = useState(false);
-  const [newLabel, setNewLabel] = useState('');
-  const [newAmount, setNewAmount] = useState('');
 
   const expenseInsight = useMemo(() => {
     const banking = getBankingAccounts();
@@ -51,30 +40,11 @@ export default function ReviewStepFinances({ onNext, onBack }: ReviewStepFinance
     return cats.slice(0, 6);
   }, [expenseInsight]);
 
-  const handleAddExpense = useCallback(() => {
-    const amount = parseFloat(newAmount);
-    if (!newLabel.trim() || isNaN(amount) || amount <= 0) return;
-    const expense: CustomExpense = {
-      id: `custom-${Date.now()}`,
-      label: newLabel.trim(),
-      amount: Math.round(amount),
-    };
-    setCustomExpenses((prev) => [...prev, expense]);
-    setNewLabel('');
-    setNewAmount('');
-    setIsAdding(false);
-  }, [newLabel, newAmount]);
-
-  const handleRemoveExpense = useCallback((id: string) => {
-    setCustomExpenses((prev) => prev.filter((e) => e.id !== id));
-  }, []);
-
-  // Update monthlyExpenses when custom expenses change
+  // Sync detected expenses to profile
   useEffect(() => {
     const detected = expenseInsight?.estimatedMonthlyExpenses ?? 0;
-    const custom = customExpenses.reduce((sum, e) => sum + e.amount, 0);
-    updateField('monthlyExpenses', detected + custom);
-  }, [customExpenses, expenseInsight, updateField]);
+    updateField('monthlyExpenses', detected);
+  }, [expenseInsight, updateField]);
 
   return (
     <motion.div
@@ -86,7 +56,7 @@ export default function ReviewStepFinances({ onNext, onBack }: ReviewStepFinance
     >
       <h2 className="font-serif text-2xl text-ws-text mb-1">Personal Finances</h2>
       <p className="text-sm text-ws-text-secondary mb-6">
-        Review the numbers below. Edit anything that needs updating, then confirm & continue.
+        Review the numbers below, then confirm & continue. Editing coming soon.
       </p>
 
       {expenseInsight && (
@@ -119,61 +89,7 @@ export default function ReviewStepFinances({ onNext, onBack }: ReviewStepFinance
       <div className="bg-white rounded-xl border border-ws-border p-4 mb-4">
         <p className="text-xs text-ws-text-tertiary uppercase tracking-wider mb-2">Additional Expenses</p>
 
-        {customExpenses.length > 0 && (
-          <div className="space-y-2 mb-3">
-            {customExpenses.map((exp) => (
-              <div key={exp.id} className="flex items-center justify-between text-sm">
-                <span className="text-ws-text">{exp.label}</span>
-                <span className="flex items-center gap-2">
-                  <span className="font-medium text-ws-text">${exp.amount.toLocaleString()}/mo</span>
-                  <button onClick={() => handleRemoveExpense(exp.id)} className="text-ws-text-tertiary hover:text-ws-text transition-colors">
-                    <X size={14} />
-                  </button>
-                </span>
-              </div>
-            ))}
-          </div>
-        )}
-
-        {isAdding ? (
-          <div className="flex items-center gap-2">
-            <input
-              type="text"
-              placeholder="e.g. Rent"
-              value={newLabel}
-              onChange={(e) => setNewLabel(e.target.value)}
-              onKeyDown={(e) => { if (e.key === 'Enter') handleAddExpense(); if (e.key === 'Escape') setIsAdding(false); }}
-              className="flex-1 text-sm border border-ws-border rounded-lg px-3 py-1.5 bg-white text-ws-text focus:outline-none focus:ring-2 focus:ring-ws-green/30"
-              autoFocus
-            />
-            <div className="flex items-center gap-1">
-              <span className="text-sm text-ws-text-secondary">$</span>
-              <input
-                type="number"
-                placeholder="0"
-                value={newAmount}
-                onChange={(e) => setNewAmount(e.target.value)}
-                onKeyDown={(e) => { if (e.key === 'Enter') handleAddExpense(); if (e.key === 'Escape') setIsAdding(false); }}
-                className="w-24 text-sm border border-ws-border rounded-lg px-3 py-1.5 bg-white text-ws-text focus:outline-none focus:ring-2 focus:ring-ws-green/30 [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
-              />
-              <span className="text-sm text-ws-text-secondary">/mo</span>
-            </div>
-            <button
-              onClick={handleAddExpense}
-              className="p-1.5 rounded-lg bg-ws-green text-white hover:bg-ws-green/90 transition-colors"
-            >
-              <Plus size={14} />
-            </button>
-          </div>
-        ) : (
-          <button
-            onClick={() => setIsAdding(true)}
-            className="flex items-center gap-1.5 text-sm text-ws-text-tertiary hover:text-ws-green transition-colors"
-          >
-            <Plus size={14} />
-            Add expense
-          </button>
-        )}
+        <span className="text-[11px] text-ws-text-tertiary">Add expense - coming soon</span>
       </div>
 
       <div className="space-y-3">
@@ -183,6 +99,7 @@ export default function ReviewStepFinances({ onNext, onBack }: ReviewStepFinance
           editValue={profile.age}
           min={18}
           max={80}
+          disabled
           onChange={(v) => updateField('age', Math.round(v as number))}
         />
 
@@ -196,6 +113,7 @@ export default function ReviewStepFinances({ onNext, onBack }: ReviewStepFinance
           max={50000}
           step={100}
           insight={expenseInsight ? 'Derived from your transaction history' : undefined}
+          disabled
           onChange={(v) => updateField('monthlyExpenses', Math.round(v as number))}
         />
 
@@ -206,17 +124,22 @@ export default function ReviewStepFinances({ onNext, onBack }: ReviewStepFinance
           const savingsMonthly = Math.round(savingsAnnual / 12);
           return (
             <div className="bg-white rounded-xl border border-ws-border p-4">
-              <p className="text-xs text-ws-text-tertiary uppercase tracking-wider mb-1">Savings Rate</p>
+              <div className="flex items-start justify-between">
+                <p className="text-xs text-ws-text-tertiary uppercase tracking-wider mb-1">Savings Rate</p>
+                <span className="text-[11px] text-ws-text-tertiary">Coming soon</span>
+              </div>
               <p className="text-lg font-semibold text-ws-text">{(profile.annualSavingsRate * 100).toFixed(0)}%</p>
-              <input
-                type="range"
-                min={0}
-                max={80}
-                step={1}
-                value={Math.round(profile.annualSavingsRate * 100)}
-                onChange={(e) => updateField('annualSavingsRate', parseInt(e.target.value) / 100)}
-                className="w-full h-1.5 mt-2 mb-1 rounded-full appearance-none cursor-pointer bg-gray-200 accent-ws-green [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-ws-green [&::-webkit-slider-thumb]:shadow-sm"
-              />
+              <div className="pointer-events-none opacity-50">
+                <input
+                  type="range"
+                  min={0}
+                  max={80}
+                  step={1}
+                  value={Math.round(profile.annualSavingsRate * 100)}
+                  onChange={(e) => updateField('annualSavingsRate', parseInt(e.target.value) / 100)}
+                  className="w-full h-1.5 mt-2 mb-1 rounded-full appearance-none cursor-pointer bg-gray-200 accent-ws-green [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-ws-green [&::-webkit-slider-thumb]:shadow-sm"
+                />
+              </div>
               <p className="text-xs text-ws-text-secondary mt-1">
                 ${savingsMonthly.toLocaleString()}/mo · ${savingsAnnual.toLocaleString()}/yr of ${Math.round(netAnnual).toLocaleString()} net income
               </p>

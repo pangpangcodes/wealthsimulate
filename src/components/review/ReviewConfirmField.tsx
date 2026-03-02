@@ -15,6 +15,7 @@ interface ReviewConfirmFieldProps {
   step?: number;
   options?: { value: string; label: string }[];
   insight?: string;
+  disabled?: boolean;
   onChange: (value: number | string) => void;
 }
 
@@ -30,6 +31,7 @@ export default function ReviewConfirmField({
   step = 1,
   options,
   insight,
+  disabled = false,
   onChange,
 }: ReviewConfirmFieldProps) {
   const [isEditing, setIsEditing] = useState(false);
@@ -126,12 +128,16 @@ export default function ReviewConfirmField({
         </div>
 
         {!isEditing && (
-          <button
-            onClick={handleEdit}
-            className="p-1.5 rounded-lg hover:bg-ws-hover transition-colors text-ws-text-tertiary"
-          >
-            <Pencil size={14} />
-          </button>
+          disabled ? (
+            <span className="text-[11px] text-ws-text-tertiary">Coming soon</span>
+          ) : (
+            <button
+              onClick={handleEdit}
+              className="p-1.5 rounded-lg hover:bg-ws-hover transition-colors text-ws-text-tertiary"
+            >
+              <Pencil size={14} />
+            </button>
+          )
         )}
       </div>
     </div>

@@ -61,7 +61,7 @@ export default function ReviewStepEmployment({ onNext, onBack }: ReviewStepEmplo
     >
       <h2 className="font-serif text-2xl text-ws-text mb-1">Employment & Income</h2>
       <p className="text-sm text-ws-text-secondary mb-6">
-        Review your employment details below. Edit anything that needs updating, then confirm & continue.
+        Review your employment details below, then confirm & continue. Editing coming soon.
       </p>
 
       {incomeInsight && (
@@ -88,6 +88,7 @@ export default function ReviewStepEmployment({ onNext, onBack }: ReviewStepEmplo
           max={1000000}
           step={1000}
           insight={incomeInsight ? `Based on your deposit pattern (${incomeInsight.confidence} confidence)` : undefined}
+          disabled
           onChange={(v) => updateField('annualIncome', Math.round(v as number))}
         />
 
@@ -97,6 +98,7 @@ export default function ReviewStepEmployment({ onNext, onBack }: ReviewStepEmplo
           editValue={profile.province}
           type="select"
           options={PROVINCE_OPTIONS}
+          disabled
           onChange={(v) => updateField('province', v as Province)}
         />
 
