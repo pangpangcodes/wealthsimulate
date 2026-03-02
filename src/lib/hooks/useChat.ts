@@ -107,9 +107,9 @@ CONFIDENCE ASSESSMENT:
     const annualIncomeLost = profile.annualIncome;
     const additionalIncome = results.config.scenario.additionalIncome ?? 0;
 
-    // Sum non-registered account values as liquid assets
+    // Liquid assets: chequing + non-registered (accessible without tax penalty)
     const liquidAccounts = profile.accounts
-      .filter((a) => a.type === 'non-registered')
+      .filter((a) => a.type === 'non-registered' || a.type === 'chequing')
       .reduce((sum, a) => sum + a.marketValue, 0);
 
     const monthlyRunway = monthlyExpenses > 0
@@ -128,7 +128,7 @@ NEAR-TERM CASH FLOW (career gap analysis):
 - Monthly expenses: $${monthlyExpenses.toLocaleString()}/mo
 - Annual income lost during gap: $${annualIncomeLost.toLocaleString()}
 - Additional income during gap (EI/severance): $${additionalIncome.toLocaleString()}/yr
-- Liquid (non-registered) accounts: $${Math.round(liquidAccounts).toLocaleString()}
+- Liquid accounts (chequing + non-registered): $${Math.round(liquidAccounts).toLocaleString()}
 - Estimated months of runway at current expenses: ${monthlyRunway} months${year1Entry ? `\n- Net worth at Year 1 (most likely): $${Math.round(year1Entry.p50).toLocaleString()}` : ''}`;
   }
 

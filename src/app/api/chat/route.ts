@@ -111,56 +111,54 @@ export async function POST(request: NextRequest) {
       input: Record<string, unknown>;
       output: Record<string, unknown>;
     }> = [];
-    let iterations = 0;
-    const maxIterations = 5;
 
     // ── Agentic tool loop (non-streamed, fast) ──────────────────────────
-    // Each iteration checks for tool_use. When tools are found, process
-    // them and continue. When no tools, the text is the final response
-    // but was fetched non-streamed, so we discard it and re-stream below.
-    while (iterations < maxIterations) {
-      iterations++;
+    // Only runs when tools are available (non-analysis requests).
+    // Analysis requests skip straight to streaming since tools aren't offered.
+    if (!isAnalysisRequest) {
+      let iterations = 0;
+      const maxIterations = 5;
 
-      const response = await anthropic.messages.create({
-        model: 'claude-sonnet-4-6',
-        max_tokens: 2048,
-        system: systemPrompt,
-        ...(isAnalysisRequest ? {} : { tools: CLAUDE_TOOLS }),
-        messages: currentMessages,
-      });
+      while (iterations < maxIterations) {
+        iterations++;
 
-      const assistantContent: Anthropic.ContentBlock[] = response.content;
-      const toolUseBlocks = assistantContent.filter(
-        (b): b is Anthropic.ToolUseBlock => b.type === 'tool_use'
-      );
+        const response = await anthropic.messages.create({
+          model: 'claude-sonnet-4-6',
+          max_tokens: 2048,
+          system: systemPrompt,
+          tools: CLAUDE_TOOLS,
+          messages: currentMessages,
+        });
 
-      if (toolUseBlocks.length === 0) break; // No tools - stream final response below
-
-      const toolUseResults: Anthropic.ToolResultBlockParam[] = [];
-      for (const block of toolUseBlocks) {
-        const validated = validateToolOutput(
-          processToolCall(block.name, block.input as Record<string, unknown>, profile, savedScenarioNames, savedScenarioSummaries)
+        const assistantContent: Anthropic.ContentBlock[] = response.content;
+        const toolUseBlocks = assistantContent.filter(
+          (b): b is Anthropic.ToolUseBlock => b.type === 'tool_use'
         );
-        toolResults.push({ toolName: block.name, input: block.input as Record<string, unknown>, output: validated });
-        toolUseResults.push({ type: 'tool_result', tool_use_id: block.id, content: JSON.stringify(validated) });
-      }
 
-      currentMessages = [
-        ...currentMessages,
-        { role: 'assistant', content: assistantContent },
-        { role: 'user', content: toolUseResults },
-      ];
+        if (toolUseBlocks.length === 0) break; // No tools - stream final response below
+
+        const toolUseResults: Anthropic.ToolResultBlockParam[] = [];
+        for (const block of toolUseBlocks) {
+          const validated = validateToolOutput(
+            processToolCall(block.name, block.input as Record<string, unknown>, profile, savedScenarioNames, savedScenarioSummaries)
+          );
+          toolResults.push({ toolName: block.name, input: block.input as Record<string, unknown>, output: validated });
+          toolUseResults.push({ type: 'tool_result', tool_use_id: block.id, content: JSON.stringify(validated) });
+        }
+
+        currentMessages = [
+          ...currentMessages,
+          { role: 'assistant', content: assistantContent },
+          { role: 'user', content: toolUseResults },
+        ];
+      }
     }
 
     // ── Stream the final text response ────────────────────────────────
-    // If tools were used, currentMessages already has tool results appended
-    // and we need a fresh call. If no tools, we re-stream the same call
-    // (one wasted non-streamed call, but gives real streaming UX).
     const stream = anthropic.messages.stream({
       model: 'claude-sonnet-4-6',
       max_tokens: 2048,
       system: systemPrompt,
-      // Don't offer tools on the final streaming call - we just want text
       messages: currentMessages,
     });
 

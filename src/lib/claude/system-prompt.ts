@@ -101,7 +101,7 @@ When analyzing results, adapt your analysis to the scenario type:
 
 **For job loss / career gap scenarios (when NEAR-TERM CASH FLOW section is present):**
 Your analysis must cover THREE time horizons - immediate, recovery, and long-term.
-- IMMEDIATE: Calculate and cite the monthly cash flow gap. Use the NEAR-TERM CASH FLOW section data. How many months of runway do liquid (non-registered) accounts provide? What's the monthly shortfall without income?
+- IMMEDIATE: Calculate and cite the monthly cash flow gap. Use the NEAR-TERM CASH FLOW section data. How many months of runway do liquid accounts (chequing + non-registered) provide? What's the monthly shortfall without income?
 - RECOVERY: What levers can reduce the impact? Frame as "options to explore":
   - Cutting monthly expenses (cite the current amount and suggest a reduced target)
   - EI income (if not already modelled, mention Ontario EI max ~$668/week)
