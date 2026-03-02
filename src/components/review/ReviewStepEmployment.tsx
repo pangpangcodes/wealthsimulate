@@ -1,9 +1,10 @@
 'use client';
 
-import { useEffect, useMemo, useRef } from 'react';
+import { useEffect, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { Sparkles } from 'lucide-react';
 import { useProfileStore } from '@/lib/store/profile-store';
+import { SEED_PROFILE } from '@/lib/store/seed-data';
 import { detectBiweeklyIncome } from '@/lib/analysis/income-detection';
 import ReviewConfirmField from './ReviewConfirmField';
 import type { Province } from '@/lib/types';
@@ -41,14 +42,12 @@ export default function ReviewStepEmployment({ onNext, onBack }: ReviewStepEmplo
     return detectBiweeklyIncome(chequing.transactions);
   }, [getBankingAccounts]);
 
-  // Apply AI-detected income to store on first render
-  const appliedRef = useRef(false);
+  // Apply AI-detected income only if the user hasn't manually edited it
   useEffect(() => {
-    if (incomeInsight && !appliedRef.current) {
-      appliedRef.current = true;
+    if (incomeInsight && profile.annualIncome === SEED_PROFILE.annualIncome) {
       updateField('annualIncome', incomeInsight.estimatedAnnualIncome);
     }
-  }, [incomeInsight, updateField]);
+  }, [incomeInsight, updateField, profile.annualIncome]);
 
   const provinceName = PROVINCE_OPTIONS.find((p) => p.value === profile.province)?.label || profile.province;
 
