@@ -28,7 +28,7 @@ export interface PhasedInsights {
 // ─── Scenario-Aware Types ──────────────────────────────────────────────────
 
 export type ScenarioFocus = 'home-purchase' | 'career-gap' | 'children' | 'market-crash'
-  | 'retirement-age' | 'savings-change' | 'contribution-timing' | 'retirement';
+  | 'retirement-age' | 'spending-change' | 'savings-change' | 'contribution-timing' | 'retirement';
 
 export interface MetricCardData {
   label: string;
@@ -105,12 +105,13 @@ export function detectScenarioFocus(
   profile: FinancialProfile
 ): ScenarioFocus {
   // Priority order: home-purchase > career-gap > children > market-crash >
-  // retirement-age > savings-change > contribution-timing > retirement
+  // retirement-age > spending-change > savings-change > contribution-timing > retirement
   if (scenario.homePurchase) return 'home-purchase';
   if (scenario.careerChange && scenario.careerChange.gapMonths > 0) return 'career-gap';
   if (scenario.children && scenario.children.length > 0) return 'children';
   if (scenario.marketCrash) return 'market-crash';
   if (scenario.retirementAge !== undefined && scenario.retirementAge !== profile.retirementAge) return 'retirement-age';
+  if (scenario.desiredRetirementIncome !== undefined) return 'spending-change';
   if (scenario.annualSavingsRate !== undefined && scenario.annualSavingsRate !== profile.annualSavingsRate) return 'savings-change';
   if (scenario.contributionTiming === 'monthly') return 'contribution-timing';
   return 'retirement';
@@ -219,6 +220,38 @@ export function generateMetricCards(
       },
       middleCard,
       longTermImpactCard,
+    ];
+  }
+
+  if (focus === 'spending-change') {
+    const baselineSpending = profile.desiredRetirementIncome ?? profile.monthlyExpenses * 12;
+    const scenarioSpending = scenario.desiredRetirementIncome ?? baselineSpending;
+    const spendingDelta = scenarioSpending - baselineSpending;
+    const spendingPct = baselineSpending > 0 ? Math.round((scenarioSpending / baselineSpending) * 100) : 100;
+
+    return [
+      {
+        label: 'Money Lasts To',
+        value: moneyLastsToAge >= lifeExpectancy ? `Age ${lifeExpectancy}+` : `Age ${moneyLastsToAge}`,
+        severity: moneyLastsToAge >= lifeExpectancy ? 'green'
+          : moneyLastsToAge >= lifeExpectancy - 5 ? 'amber' : 'red',
+        ...(moneyLastsDelta !== null ? {
+          delta: { label: `${moneyLastsDelta >= 0 ? '+' : ''}${moneyLastsDelta} yrs vs baseline`, positive: moneyLastsDelta >= 0 },
+        } : {}),
+      },
+      {
+        label: 'Retirement Spending',
+        value: fmtMonthly(scenarioSpending),
+        subtext: `${spendingPct}% of current spending`,
+        ...(spendingDelta !== 0 ? {
+          delta: { label: `${spendingDelta >= 0 ? '+' : ''}${fmtWhole(spendingDelta)}/yr vs baseline`, positive: spendingDelta <= 0 },
+        } : {}),
+      },
+      {
+        label: 'Retirement Income',
+        value: fmtMonthly(summary.retirementAnnualIncomeP50),
+        subtext: `${(summary.incomeReplacementRatio * 100).toFixed(0)}% of ${fmtWhole(summary.incomeReplacementTarget ?? profile.annualIncome)} income`,
+      },
     ];
   }
 
@@ -497,6 +530,32 @@ export function generateVerdict(results: SimulationResults): Verdict {
       message: baseMessage,
       subtext: `Money lasts to age ${moneyLastsToAge}`,
       chatPrompt: 'How much does monthly DCA actually help?',
+    };
+  }
+
+  // ── Spending Change verdict ──
+  if (focus === 'spending-change') {
+    const baselineSpending = profile.desiredRetirementIncome ?? profile.monthlyExpenses * 12;
+    const scenarioSpending = scenario.desiredRetirementIncome ?? baselineSpending;
+    const pct = baselineSpending > 0 ? Math.round((scenarioSpending / baselineSpending) * 100) : 100;
+    const baseMessage = `Spending ${pct}% of your current level in retirement`;
+
+    if (moneyLastsToAge >= lifeExpectancy) {
+      return { severity: 'green', message: baseMessage, subtext: `Money lasts to age ${lifeExpectancy}+` };
+    }
+    if (moneyLastsToAge >= lifeExpectancy - 5) {
+      return {
+        severity: 'amber',
+        message: baseMessage,
+        subtext: `Money lasts to age ${moneyLastsToAge} - close but tight`,
+        chatPrompt: 'What spending level would make my money last through retirement?',
+      };
+    }
+    return {
+      severity: 'red',
+      message: baseMessage,
+      subtext: `Money lasts to age ${moneyLastsToAge} - a significant gap to cover`,
+      chatPrompt: 'What spending level would make my money last through retirement?',
     };
   }
 
