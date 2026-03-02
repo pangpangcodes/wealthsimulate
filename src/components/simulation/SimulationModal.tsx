@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState, useMemo } from 'react';
+import { Reorder } from 'framer-motion';
 import { ArrowLeft, Loader2 } from 'lucide-react';
 import { useSimulationStore } from '@/lib/store/simulation-store';
 import NetWorthTimeline from '@/components/dashboard/NetWorthTimeline';
@@ -25,6 +26,7 @@ export default function SimulationPanel() {
   const currentResults = useSimulationStore((s) => s.currentResults);
   const savedScenarios = useSimulationStore((s) => s.savedScenarios);
   const switchToScenario = useSimulationStore((s) => s.switchToScenario);
+  const reorderScenarios = useSimulationStore((s) => s.reorderScenarios);
   const simulationModalScenarioName = useSimulationStore((s) => s.simulationModalScenarioName);
   const modalAnalysisSummaries = useSimulationStore((s) => s.modalAnalysisSummaries);
   const setPendingAnalysis = useSimulationStore((s) => s.setPendingAnalysis);
@@ -164,25 +166,39 @@ export default function SimulationPanel() {
       <div className="bg-white rounded-xl border border-ws-border p-6 space-y-4">
       {/* Scenario tabs */}
       {showTabs && (
-        <div className="flex flex-wrap gap-1">
+        <Reorder.Group
+          as="div"
+          axis="x"
+          values={savedScenarios}
+          onReorder={reorderScenarios}
+          className="flex flex-wrap gap-1"
+        >
           {savedScenarios.map((scenario) => {
             const isActive = currentResults?.id === scenario.id;
             return (
-              <button
+              <Reorder.Item
                 key={scenario.id}
-                onClick={() => switchToScenario(scenario.id)}
-                disabled={isSimulating}
-                className={`text-xs px-3 py-1.5 rounded-full transition-colors disabled:opacity-40 ${
-                  isActive
-                    ? 'bg-ws-black text-white'
-                    : 'bg-ws-bg text-ws-text hover:bg-ws-hover'
-                }`}
+                value={scenario}
+                as="div"
+                className="cursor-grab active:cursor-grabbing"
+                whileDrag={{ scale: 1.05, boxShadow: '0 4px 12px rgba(0,0,0,0.15)' }}
+                dragListener={!isSimulating}
               >
-                {scenario.scenarioName}
-              </button>
+                <button
+                  onClick={() => switchToScenario(scenario.id)}
+                  disabled={isSimulating}
+                  className={`text-xs px-3 py-1.5 rounded-full transition-colors disabled:opacity-40 ${
+                    isActive
+                      ? 'bg-ws-black text-white'
+                      : 'bg-ws-bg text-ws-text hover:bg-ws-hover'
+                  }`}
+                >
+                  {scenario.scenarioName}
+                </button>
+              </Reorder.Item>
             );
           })}
-        </div>
+        </Reorder.Group>
       )}
 
       {/* Loading state */}

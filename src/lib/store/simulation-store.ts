@@ -43,6 +43,7 @@ interface SimulationState {
   saveScenario: (results: SimulationResults) => void;
   removeScenario: (id: string) => void;
   switchToScenario: (id: string) => void;
+  reorderScenarios: (reordered: SimulationResults[]) => void;
   compareScenarios: (ids: string[]) => void;
   clearComparison: () => void;
   reset: () => void;
@@ -110,6 +111,8 @@ export const useSimulationStore = create<SimulationState>()(persist((set, get) =
       }
       return { savedScenarios: scenarios };
     }),
+
+  reorderScenarios: (reordered) => set({ savedScenarios: reordered }),
 
   removeScenario: (id) =>
     set((state) => {

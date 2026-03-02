@@ -1,6 +1,7 @@
 'use client';
 
 import { useMemo } from 'react';
+import { Reorder } from 'framer-motion';
 import { useSimulationStore } from '@/lib/store/simulation-store';
 import { X, Plus, Expand } from 'lucide-react';
 import { POSITIVE_COLOURS, NEGATIVE_COLOURS, BASELINE_COLOUR } from '@/components/dashboard/NetWorthTimeline';
@@ -14,6 +15,7 @@ export default function ScenarioCompare({ activeScenarioId, onActiveChange }: Sc
   const savedScenarios = useSimulationStore((s) => s.savedScenarios);
   const currentResults = useSimulationStore((s) => s.currentResults);
   const removeScenario = useSimulationStore((s) => s.removeScenario);
+  const reorderScenarios = useSimulationStore((s) => s.reorderScenarios);
   const setChatPrompt = useSimulationStore((s) => s.setChatPrompt);
   const openSimulationModal = useSimulationStore((s) => s.openSimulationModal);
   const switchToScenario = useSimulationStore((s) => s.switchToScenario);
@@ -46,15 +48,27 @@ export default function ScenarioCompare({ activeScenarioId, onActiveChange }: Sc
   if (scenarios.length === 0) return null;
 
   return (
-    <div>
-      <div className="flex items-center gap-2 flex-wrap">
+    <div className="flex items-center gap-2 flex-wrap">
+      <Reorder.Group
+        as="div"
+        axis="x"
+        values={scenarios}
+        onReorder={reorderScenarios}
+        className="flex items-center gap-2 flex-wrap"
+      >
         {scenarios.map((scenario) => {
           const isActive = scenario.id === activeScenarioId;
           const isBaseline = scenario.scenarioName === 'Current Path';
           const colour = colourMap.get(scenario.id) ?? BASELINE_COLOUR;
 
           return (
-            <div key={scenario.id} className="group relative flex items-center">
+            <Reorder.Item
+              key={scenario.id}
+              value={scenario}
+              as="div"
+              className="group relative flex items-center cursor-grab active:cursor-grabbing"
+              whileDrag={{ scale: 1.05, boxShadow: '0 4px 12px rgba(0,0,0,0.15)' }}
+            >
               <button
                 type="button"
                 onClick={() => onActiveChange(scenario.id)}
@@ -96,37 +110,37 @@ export default function ScenarioCompare({ activeScenarioId, onActiveChange }: Sc
                   <X size={10} className="text-ws-text-tertiary hover:text-ws-red" />
                 </button>
               )}
-            </div>
+            </Reorder.Item>
           );
         })}
+      </Reorder.Group>
 
-        {/* + Variant button */}
+      {/* + Variant button */}
+      <button
+        type="button"
+        onClick={() => setChatPrompt('variant')}
+        className="flex items-center gap-0.5 px-3 py-1.5 text-xs text-ws-text-secondary hover:text-ws-text rounded-full hover:bg-ws-hover transition-colors"
+      >
+        <Plus size={11} />
+        Variant
+      </button>
+
+      {/* Expand detail - opens simulation modal for active scenario */}
+      {activeScenarioId && (
         <button
           type="button"
-          onClick={() => setChatPrompt('variant')}
-          className="flex items-center gap-0.5 px-3 py-1.5 text-xs text-ws-text-secondary hover:text-ws-text rounded-full hover:bg-ws-hover transition-colors"
+          onClick={() => {
+            switchToScenario(activeScenarioId);
+            const scenario = scenarios.find((s) => s.id === activeScenarioId);
+            if (scenario) openSimulationModal(scenario.scenarioName);
+          }}
+          className="ml-auto p-1.5 rounded-lg text-ws-text-tertiary hover:text-ws-text hover:bg-ws-hover transition-colors"
+          aria-label="View scenario detail"
+          title="View scenario detail"
         >
-          <Plus size={11} />
-          Variant
+          <Expand size={14} />
         </button>
-
-        {/* Expand detail - opens simulation modal for active scenario */}
-        {activeScenarioId && (
-          <button
-            type="button"
-            onClick={() => {
-              switchToScenario(activeScenarioId);
-              const scenario = scenarios.find((s) => s.id === activeScenarioId);
-              if (scenario) openSimulationModal(scenario.scenarioName);
-            }}
-            className="ml-auto p-1.5 rounded-lg text-ws-text-tertiary hover:text-ws-text hover:bg-ws-hover transition-colors"
-            aria-label="View scenario detail"
-            title="View scenario detail"
-          >
-            <Expand size={14} />
-          </button>
-        )}
-      </div>
+      )}
     </div>
   );
 }
