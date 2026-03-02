@@ -4,13 +4,13 @@ AI-powered Monte Carlo financial life simulator for Canadians.
 
 ## The Problem
 
-Most Canadians don't have access to the probabilistic financial planning that wealth managers charge thousands for. Spreadsheets can model one future - but life doesn't follow a single path. Market returns vary, jobs change, plans shift. Without understanding the range of outcomes, people either over-save out of anxiety or under-save out of optimism.
+Wealthsimple shows you what you have. It can't help you reason about your future. When a 33-year-old user wants to know whether she can afford a career break in her 30s, she goes on Reddit. She gets a rule of thumb. She has no way to run that question against her actual accounts, tax bracket, savings rate, and retirement trajectory — and get a probabilistic answer, not a single number.
 
 ## The Solution
 
-Wealthsimulate lets you explore financial decisions in natural language. Connect your Wealthsimple account (or start with example data), ask "what if" questions - buy a home, change careers, retire early - and see the impact across 1,000 simulated futures with real Canadian tax rules.
+Wealthsimulate adds a reasoning layer on top of existing Wealthsimple data. Before you've typed a word, the AI has already noticed your emergency fund is thin and that your savings habits have long-term compounding costs. Then you ask your question in plain English — change careers, retire early, take a sabbatical — and see the impact across 1,000 simulated futures with real Canadian tax rules.
 
-The AI doesn't just answer questions. It runs full Monte Carlo simulations, compares scenarios side by side, and explains trade-offs in plain English - not financial jargon.
+The AI takes on genuine cognitive responsibility: it detects income from deposit patterns, infers your financial picture from transaction history, and surfaces risks and opportunities before you ask. Then it explains what 1,000 simulated paths mean for your specific income, tax bracket, and retirement trajectory — not a generic calculator.
 
 ## Features
 
@@ -30,7 +30,7 @@ The AI doesn't just answer questions. It runs full Monte Carlo simulations, comp
 
 ### AI Co-pilot
 - **Two-phase architecture** - Claude interprets the question and builds scenario parameters (Phase 1), then analyzes real simulation results (Phase 2). AI never invents financial numbers
-- **Natural language scenarios** - "What if I buy a home in 2028 for $500k?" becomes a structured simulation with mortgage payments, down payment, and opportunity cost
+- **Natural language scenarios** - "What if I take a career break next year?" or "What if I lose my job for 6 months?" becomes a structured simulation with cash flow gap, emergency runway, and retirement impact
 - **Scenario comparison** - ask Claude to compare any saved scenarios side by side
 - **Voice input** via browser speech recognition
 
@@ -55,7 +55,7 @@ The AI doesn't just answer questions. It runs full Monte Carlo simulations, comp
 
 ### Onboarding
 - **Account connection** - connect your Wealthsimple account to sync accounts, holdings, and balances (prototype uses drag-and-drop statement upload with Claude vision extraction)
-- **Example profile** - start immediately with seed data (Alex, 33, Ontario, $59k income)
+- **Example profile** - start immediately with seed data (Alex, 33, Ontario, $75k income, RRSP + TFSA, 90 days of transaction history)
 - **4-step review wizard** - employment, finances, goals, and risk tolerance with animated transitions
 - **Auto-detection** - infers biweekly income from paycheck patterns and derives monthly expenses from transaction categories
 
