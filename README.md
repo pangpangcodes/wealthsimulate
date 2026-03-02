@@ -181,7 +181,6 @@ With Wealthsimple API access, Wealthsimulate could:
 - **Contribution room tracking** - Query actual RRSP/TFSA/FHSA contribution room from CRA data via Wealthsimple
 - **Transaction history** - Infer spending patterns and savings rates from real transaction data
 - **Automated rebalancing scenarios** - Model the impact of Wealthsimple's own rebalancing strategies
-- **Goal tracking integration** - Sync savings targets and timelines against real account balances for unified planning
 
 The statement upload flow in this prototype demonstrates the data bridge - showing how real account data transforms the simulation from hypothetical to personal.
 
