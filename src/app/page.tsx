@@ -231,7 +231,7 @@ export default function OnboardingPage() {
                       <div className="flex justify-between items-end">
                         <div>
                           <div className="text-sm text-gray-500 mb-1">Net Worth at 65</div>
-                          <div className="text-4xl font-semibold tracking-tight text-ws-dark">$921,000</div>
+                          <div className="text-4xl font-semibold tracking-tight text-ws-dark">$540,000</div>
                         </div>
                         <div className="text-ws-green font-medium bg-ws-green/10 px-2 py-1 rounded text-sm">+12% vs baseline</div>
                       </div>
