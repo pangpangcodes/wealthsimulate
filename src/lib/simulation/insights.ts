@@ -561,13 +561,13 @@ export function generateVerdict(results: SimulationResults): Verdict {
 
   // ── Default Retirement verdict (Tier 3) ──
 
-  if (moneyLastsToAge >= lifeExpectancy) {
+  if (moneyLastsToAge >= lifeExpectancy - 4) {
     // Money lasts long-term, but flag short-term cash flow problems
     if (hasEarlyDip || lowIncomeReplacement || thinGapBuffer) {
       return {
         severity: 'amber',
         message: 'Long-term outlook is okay, but short-term cash flow is tight',
-        subtext: `Money lasts to age ${lifeExpectancy}+, but early years are strained`,
+        subtext: `Money lasts${moneyLastsToAge >= lifeExpectancy ? ` to age ${lifeExpectancy}+` : ' through most of retirement'}, but early years are strained`,
         chatPrompt: 'What can I do to handle the short-term cash flow gap?',
       };
     }
@@ -575,16 +575,6 @@ export function generateVerdict(results: SimulationResults): Verdict {
       severity: 'green',
       message: 'Your money lasts through retirement',
       subtext: `Covered to age ${lifeExpectancy}+`,
-    };
-  }
-
-  if (moneyLastsToAge >= lifeExpectancy - 5) {
-    const gap = lifeExpectancy - moneyLastsToAge;
-    return {
-      severity: 'amber',
-      message: `Your savings are projected to cover you to age ${moneyLastsToAge}`,
-      subtext: `${gap} year${gap !== 1 ? 's' : ''} short of life expectancy. Small adjustments could close this gap.`,
-      chatPrompt: 'What small changes could extend my runway?',
     };
   }
 

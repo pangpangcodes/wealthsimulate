@@ -96,19 +96,19 @@ export const PRESET_SCENARIOS: Record<string, ScenarioOverrides> = {
 
 export const SUGGESTED_PROMPTS = [
   {
-    label: 'Am I on track to retire comfortably at 65?',
-    prompt: 'Based on my current savings, am I on track for retirement at 65?',
-    category: 'analysis' as const,
-  },
-  {
     label: 'Would switching to monthly contributions grow my money faster?',
-    prompt: 'Is my habit of saving a lump sum each February costing me? What if I switched to monthly?',
+    prompt: 'Would switching to monthly contributions grow my money faster than saving a lump sum once a year?',
     category: 'scenario' as const,
   },
   {
     label: 'What happens if I lose my job for 6 months?',
     prompt: 'What happens if I lose my job next year and it takes 6 months to find work?',
     category: 'scenario' as const,
+  },
+  {
+    label: 'Am I on track to retire comfortably at 65?',
+    prompt: 'Based on my current savings, am I on track for retirement at 65?',
+    category: 'analysis' as const,
   },
 ];
 
