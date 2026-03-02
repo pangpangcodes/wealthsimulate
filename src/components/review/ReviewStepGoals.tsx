@@ -70,9 +70,9 @@ export default function ReviewStepGoals({ onNext, onBack }: ReviewStepGoalsProps
         </button>
         <button
           onClick={onNext}
-          className="bg-ws-dark text-white rounded-full px-6 py-2.5 text-sm font-medium hover:bg-ws-black transition-colors"
+          className="bg-ws-green text-white rounded-full px-6 py-2.5 text-sm font-medium hover:bg-ws-green/90 transition-colors"
         >
-          Confirm & continue
+          Finish and view simulator
         </button>
       </div>
     </motion.div>

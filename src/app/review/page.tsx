@@ -9,14 +9,13 @@ import ReviewWelcome from '@/components/review/ReviewWelcome';
 import ReviewStepEmployment from '@/components/review/ReviewStepEmployment';
 import ReviewStepFinances from '@/components/review/ReviewStepFinances';
 import ReviewStepGoals from '@/components/review/ReviewStepGoals';
-import ReviewStepRisk from '@/components/review/ReviewStepRisk';
 import ReviewProgress from '@/components/review/ReviewProgress';
 
-const TOTAL_STEPS = 4;
+const TOTAL_STEPS = 3;
 
 export default function ReviewPage() {
   const router = useRouter();
-  const [step, setStep] = useState(0); // 0 = welcome, 1-4 = steps
+  const [step, setStep] = useState(0); // 0 = welcome, 1-3 = steps
 
   const handleComplete = () => {
     router.push('/simulator');
@@ -68,15 +67,8 @@ export default function ReviewPage() {
           {step === 3 && (
             <ReviewStepGoals
               key="goals"
-              onNext={() => setStep(4)}
+              onNext={handleComplete}
               onBack={() => setStep(2)}
-            />
-          )}
-          {step === 4 && (
-            <ReviewStepRisk
-              key="risk"
-              onComplete={handleComplete}
-              onBack={() => setStep(3)}
             />
           )}
         </AnimatePresence>

@@ -1,6 +1,6 @@
 'use client';
 
-const STEP_LABELS = ['Employment & Income', 'Personal Finances', 'Investment Goals', 'Risk Profile'];
+const STEP_LABELS = ['Employment & Income', 'Personal Finances', 'Investment Goals'];
 
 interface ReviewProgressProps {
   currentStep: number; // 1-4 (0 = welcome, not shown)
