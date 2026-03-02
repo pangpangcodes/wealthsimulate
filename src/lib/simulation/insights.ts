@@ -193,8 +193,8 @@ export function generateMetricCards(
     let middleCard: MetricCardData;
     if (baseline && baseline.id !== results.id) {
       const impactAmount = baseline.summary.retirementNetWorthP50 - summary.retirementNetWorthP50;
-      const severity: MetricCardData['severity'] = impactAmount > 100_000 ? 'red'
-        : impactAmount > 50_000 ? 'amber' : 'green';
+      const severity: MetricCardData['severity'] = impactAmount > 75_000 ? 'red'
+        : impactAmount > 25_000 ? 'amber' : 'green';
       middleCard = {
         label: 'Retirement Impact',
         value: fmtWhole(impactAmount),

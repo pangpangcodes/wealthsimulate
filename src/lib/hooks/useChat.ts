@@ -5,6 +5,7 @@ import type { ChatMessage, ToolCallInfo, ScenarioOverrides, SimulationResults, A
 import { useProfileStore } from '@/lib/store/profile-store';
 import { useSimulationStore } from '@/lib/store/simulation-store';
 import { computeConfidence } from '@/lib/simulation/limitations';
+import { generateMetricCards, generateVerdict } from '@/lib/simulation/insights';
 
 // ─── Condense simulation results into a compact payload for Claude ──────────
 
@@ -83,6 +84,19 @@ CONFIDENCE ASSESSMENT:
 - Spread ratio (P90-P10 / P50): ${confidence.spreadRatio.toFixed(2)}
 - Scenario overrides: ${confidence.overrideCount}
 - Guidance: ${confidence.guidance}`;
+
+  // Add visible dashboard metrics so Claude knows what the user sees
+  const cards = generateMetricCards(results, baseline ?? null);
+  const verdict = generateVerdict(results);
+
+  payload += `\n\nVISIBLE DASHBOARD (what the user sees):`;
+  payload += `\nVerdict: [${verdict.severity.toUpperCase()}] ${verdict.message} - ${verdict.subtext}`;
+  for (const card of cards) {
+    let line = `\n- ${card.label}: ${card.value}`;
+    if (card.subtext) line += ` (${card.subtext})`;
+    if (card.delta) line += ` [${card.delta.label}]`;
+    payload += line;
+  }
 
   // Add near-term cash flow section for career gap scenarios
   const careerChange = results.config.scenario.careerChange;
