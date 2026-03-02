@@ -384,7 +384,7 @@ export function generateVerdict(results: SimulationResults): Verdict {
         severity: 'red',
         message: `A ${cc2.gapMonths}-month gap would drain your savings`,
         subtext: `Only ${runwayMonths} months of runway vs ${cc2.gapMonths} months needed`,
-        chatPrompt: 'What if I cut expenses during the gap?',
+        chatPrompt: 'What are my options to prepare for this?',
       };
     }
     if (moneyLastsToAge < lifeExpectancy) {

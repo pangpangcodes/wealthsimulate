@@ -8,7 +8,7 @@ import {
   TrendingUp,
   MessageSquare,
   ShieldAlert,
-  Upload,
+  Link2,
   LineChart,
   Sparkles,
   Database,
@@ -141,12 +141,12 @@ export default function OnboardingPage() {
                               }}
                               className="group relative bg-white rounded-2xl border border-ws-dark/5 p-6 text-left hover:border-ws-dark/10 hover:shadow-xl hover:shadow-ws-dark/5 transition-all duration-300 cursor-pointer"
                             >
-                              <Upload size={20} className="text-ws-green mb-3" />
+                              <Link2 size={20} className="text-ws-green mb-3" />
                               <p className="text-sm font-medium text-ws-text mb-1">
-                                Upload your statement
+                                Connect your Wealthsimple account
                               </p>
                               <p className="text-xs text-ws-dark/50">
-                                Drop a Wealthsimple PDF or screenshot
+                                Securely link your account in seconds
                               </p>
                               <AnimatePresence>
                                 {showComingSoon && (
@@ -439,10 +439,10 @@ export default function OnboardingPage() {
             >
               <div className="text-center mb-8">
                 <h2 className="font-serif text-3xl text-ws-text tracking-tight mb-2">
-                  Upload your statement
+                  Connect your Wealthsimple account
                 </h2>
                 <p className="text-sm text-ws-dark/60">
-                  We'll extract your accounts and holdings automatically
+                  We'll securely sync your accounts and holdings automatically
                 </p>
               </div>
               <StatementUpload

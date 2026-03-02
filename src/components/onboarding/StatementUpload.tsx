@@ -176,7 +176,7 @@ export function StatementUpload({ onComplete, onCancel }: StatementUploadProps) 
                 className={`mx-auto mb-4 ${isDragOver ? 'text-ws-green' : 'text-ws-text-tertiary'}`}
               />
               <p className="text-sm font-medium text-ws-text mb-1">
-                Drop your Wealthsimple statement here
+                Drop your Wealthsimple export here
               </p>
               <p className="text-xs text-ws-text-tertiary">
                 PDF or screenshot - up to 10MB
@@ -213,10 +213,10 @@ export function StatementUpload({ onComplete, onCancel }: StatementUploadProps) 
           >
             <Loader2 size={32} className="mx-auto mb-4 text-ws-green animate-spin" />
             <p className="text-sm font-medium text-ws-text mb-1">
-              Reading your statement...
+              Connecting your account...
             </p>
             <p className="text-xs text-ws-text-tertiary">
-              Claude is extracting your portfolio data
+              Syncing your portfolio data
             </p>
           </motion.div>
         )}

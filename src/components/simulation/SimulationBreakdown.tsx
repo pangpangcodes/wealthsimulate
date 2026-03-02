@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { ChevronDown } from 'lucide-react';
 import type { Insight, PhasedInsights } from '@/lib/simulation/insights';
+import { useSimulationStore } from '@/lib/store/simulation-store';
 
 interface Props {
   insights: PhasedInsights;
@@ -32,6 +33,7 @@ function Section({ title, items }: { title: string; items: Insight[] }) {
 
 export default function SimulationBreakdown({ insights, currentAge, retirementAge, lifeExpectancy }: Props) {
   const [open, setOpen] = useState(false);
+  const setChatPrompt = useSimulationStore((s) => s.setChatPrompt);
 
   const hasContent = insights.accumulation.length > 0 || insights.drawdown.length > 0 || insights.impacts.length > 0;
   if (!hasContent) return null;
@@ -62,6 +64,13 @@ export default function SimulationBreakdown({ insights, currentAge, retirementAg
             title="Scenario impacts"
             items={insights.impacts}
           />
+          <button
+            type="button"
+            onClick={() => setChatPrompt('What would you like to ask me about these assumptions?')}
+            className="text-sm text-ws-green hover:text-ws-green/80 transition-colors font-medium"
+          >
+            Ask me about this →
+          </button>
         </div>
       )}
     </div>

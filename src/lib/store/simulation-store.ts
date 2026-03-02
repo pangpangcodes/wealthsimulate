@@ -71,7 +71,6 @@ export const useSimulationStore = create<SimulationState>()(persist((set, get) =
       isSimulating: false,
       simulationProgress: 1,
       error: null,
-      pendingAnalysis: results,
     }),
 
   setSimulating: (isSimulating) =>

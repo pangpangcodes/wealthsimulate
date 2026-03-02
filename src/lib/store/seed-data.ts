@@ -1,5 +1,5 @@
 import type { FinancialProfile } from '@/lib/types';
-import { SEED_CHEQUING_ACCOUNT, SEED_CREDIT_CARD_ACCOUNT } from './seed-transactions';
+import { SEED_CHEQUING_ACCOUNT, SEED_CREDIT_CARD_ACCOUNT, SEED_RRSP_TRANSACTIONS } from './seed-transactions';
 
 export const SEED_PROFILE: FinancialProfile = {
   age: 33,
@@ -23,6 +23,7 @@ export const SEED_PROFILE: FinancialProfile = {
         { ticker: 'XUU', name: 'iShares Core S&P US', assetClass: 'us-equity', marketValue: 7200, allocation: 0.40, currency: 'CAD' },
         { ticker: 'ZAG', name: 'BMO Aggregate Bond', assetClass: 'canadian-bonds', marketValue: 5400, allocation: 0.30, currency: 'CAD' },
       ],
+      transactions: SEED_RRSP_TRANSACTIONS,
     },
     {
       id: 'seed-tfsa',

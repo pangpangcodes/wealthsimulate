@@ -122,6 +122,15 @@ const creditCardTransactions: Transaction[] = [
   { id: 'cc-51', date: daysAgo(75), description: 'PAYMENT - THANK YOU', amount: 780.00, category: 'transfer' },
 ];
 
+// -- RRSP contribution transactions ------------------------------------------
+// Two annual lump-sum contributions in February (tax season, before March 1 deadline)
+// Amount matches annualIncome * annualSavingsRate = $75K * 9.3% = $6,975 → displayed as "$7K"
+
+export const SEED_RRSP_TRANSACTIONS: Transaction[] = [
+  { id: 'rrsp-1', date: daysAgo(2),   description: 'RRSP CONTRIBUTION', amount: 6975, category: 'transfer' },
+  { id: 'rrsp-2', date: daysAgo(367), description: 'RRSP CONTRIBUTION', amount: 6975, category: 'transfer' },
+];
+
 // -- Seed banking accounts ---------------------------------------------------
 
 export const SEED_CHEQUING_ACCOUNT: Account = {

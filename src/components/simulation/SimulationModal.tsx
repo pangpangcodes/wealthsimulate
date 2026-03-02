@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState, useMemo } from 'react';
 import { Reorder } from 'framer-motion';
-import { ArrowLeft, Loader2 } from 'lucide-react';
+import { ArrowLeft, Bot, Loader2 } from 'lucide-react';
 import { useSimulationStore } from '@/lib/store/simulation-store';
 import NetWorthTimeline from '@/components/dashboard/NetWorthTimeline';
 import SimulationBreakdown from '@/components/simulation/SimulationBreakdown';
@@ -225,27 +225,27 @@ export default function SimulationPanel() {
         <div className="space-y-4">
           {/* Verdict banner */}
           {verdict && (
-            analysisSummary ? (
               <div className={`rounded-lg px-4 py-3 ${verdictBg}`}>
-                <p className={`text-sm font-semibold ${verdictText}`}>{verdict.message}</p>
-                <p className="text-xs text-ws-text mt-1 leading-relaxed" dangerouslySetInnerHTML={{ __html: renderInlineMd(analysisSummary) }} />
-                {verdict.chatPrompt && (
-                  <button
-                    className="text-xs mt-2 underline underline-offset-2 text-ws-green"
-                    onClick={() => { setChatPrompt(verdict.chatPrompt!); }}
-                  >
-                    Ask what you can do &rarr;
-                  </button>
+                {analysisSummary ? (
+                  <>
+                    <p className={`text-sm font-semibold ${verdictText}`}>{verdict.message}</p>
+                    <p className="text-xs text-ws-text mt-1 leading-relaxed" dangerouslySetInnerHTML={{ __html: renderInlineMd(analysisSummary) }} />
+                    {verdict.chatPrompt && (
+                      <button
+                        className="text-xs mt-2 underline underline-offset-2 text-ws-green"
+                        onClick={() => { setChatPrompt(verdict.chatPrompt!); }}
+                      >
+                        Ask what you can do &rarr;
+                      </button>
+                    )}
+                  </>
+                ) : (
+                  <div className="flex items-center gap-2">
+                    <Bot size={14} className="text-ws-green" />
+                    <p className="text-sm text-ws-text-secondary">Analyzing your scenario...</p>
+                  </div>
                 )}
               </div>
-            ) : (
-              <div className="rounded-lg px-4 py-3 bg-ws-bg">
-                <div className="flex items-center gap-2">
-                  <Loader2 size={14} className="text-ws-text-tertiary animate-spin" />
-                  <p className="text-sm text-ws-text-secondary">Analyzing your scenario...</p>
-                </div>
-              </div>
-            )
           )}
 
           {/* Metric cards - 3 columns */}
