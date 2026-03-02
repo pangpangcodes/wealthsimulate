@@ -309,7 +309,7 @@ export default function OnboardingPage() {
                     {
                       icon: <MessageSquare className="w-6 h-6" />,
                       title: '3. Conversational Modeling',
-                      desc: "Don't fiddle with sliders. Just ask 'What if I take a sabbatical?' or 'Can I afford a mortgage?' and watch the chart update.",
+                      desc: "Don't fiddle with sliders. Just ask 'What if I take a sabbatical?' or 'What if I retire at 55?' and watch the chart update.",
                       color: 'bg-ws-green/10 text-ws-green',
                     },
                   ].map((item, i) => (
