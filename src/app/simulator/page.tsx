@@ -242,10 +242,16 @@ export default function SimulatorPage() {
                   <p className="text-xl font-light text-ws-text">${profile.monthlyExpenses.toLocaleString()}/mo</p>
                   <button
                     type="button"
-                    onClick={() => setChatPrompt('What if I need less in retirement?')}
+                    onClick={() => setChatPrompt(
+                      profile.retirementAge - profile.age >= 25
+                        ? 'What if I cut my spending?'
+                        : 'What if I need less in retirement?'
+                    )}
                     className="mt-1.5 text-xs text-ws-green hover:text-ws-green/80 transition-colors text-left"
                   >
-                    + What if I need less in retirement?
+                    + {profile.retirementAge - profile.age >= 25
+                      ? 'What if I cut my spending?'
+                      : 'What if I need less in retirement?'}
                   </button>
                 </div>
 

@@ -868,12 +868,20 @@ export function generateProactiveInsights(
   // 4. Goal shortfall - income replacement below 50% of pre-retirement income
   if (s.incomeReplacementRatio < 0.5 && s.incomeReplacementRatio > 0) {
     const replacementPct = Math.round(s.incomeReplacementRatio * 100);
+    const yearsToRetirement = retirementAge - profile.age;
+    const isEarlyAccumulator = yearsToRetirement >= 25;
     insights.push({
       id: 'goal-shortfall',
-      severity: 'warning',
-      title: 'Income gap in retirement',
-      body: `Your retirement income replaces ${replacementPct}% of your pre-retirement income. Most planners recommend 60-70%. Government pensions (CPP/OAS) provide ${fmtWhole(s.cppOasAnnualIncome)}/year of that.`,
-      chatPrompt: 'What savings rate would I need to replace more of my income in retirement?',
+      severity: isEarlyAccumulator ? 'opportunity' : 'warning',
+      title: isEarlyAccumulator
+        ? 'Room to grow your retirement income'
+        : 'Income gap in retirement',
+      body: isEarlyAccumulator
+        ? `Right now your projected retirement income replaces ${replacementPct}% of your pre-retirement income (60-70% is the guideline). With ${yearsToRetirement} years of compounding ahead, small changes now have an outsized effect.`
+        : `Your retirement income replaces ${replacementPct}% of your pre-retirement income. Most planners recommend 60-70%. Government pensions (CPP/OAS) provide ${fmtWhole(s.cppOasAnnualIncome)}/year of that.`,
+      chatPrompt: isEarlyAccumulator
+        ? 'What small changes now would have the biggest impact on my retirement income?'
+        : 'What savings rate would I need to replace more of my income in retirement?',
     });
   }
 
