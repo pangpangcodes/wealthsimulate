@@ -301,9 +301,9 @@ export default function OnboardingPage() {
                       color: 'bg-amber-50 text-amber-600',
                     },
                     {
-                      icon: <Globe className="w-6 h-6" />,
-                      title: '2. Portfolio Intelligence',
-                      desc: 'It analyzes your asset allocation for home bias, concentration risk, and fee drag, suggesting optimizations automatically.',
+                      icon: <LineChart className="w-6 h-6" />,
+                      title: '2. Probabilistic Forecasting',
+                      desc: 'Instead of one number, it runs 1,000 simulated futures — worst case, most likely, best case. Every answer comes with a range, not a false sense of certainty.',
                       color: 'bg-blue-50 text-blue-600',
                     },
                     {
@@ -387,7 +387,7 @@ export default function OnboardingPage() {
                       {/* User Message */}
                       <div className="flex gap-3 justify-end">
                         <div className="bg-ws-green text-ws-dark rounded-2xl rounded-tr-none p-4 text-sm font-medium">
-                          What if I buy a cottage for $400k in 5 years?
+                          What if I take a career break next year?
                         </div>
                         <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center text-white shrink-0">
                           <span className="text-xs">ME</span>

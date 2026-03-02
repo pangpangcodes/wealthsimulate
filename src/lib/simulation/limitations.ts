@@ -44,24 +44,6 @@ export function getRelevantLimitations(
     });
   }
 
-  // Home purchase - CMHC insurance
-  if (scenario.homePurchase) {
-    const dpPct = scenario.homePurchase.downPaymentPercent;
-    if (dpPct < 0.20) {
-      const insuredAmount = scenario.homePurchase.price - scenario.homePurchase.price * dpPct;
-      // CMHC premium rates: 4.00% at 5% down, 3.10% at 10% down, 2.80% at 15% down
-      let cmhcRate = 0.04;
-      if (dpPct >= 0.15) cmhcRate = 0.028;
-      else if (dpPct >= 0.10) cmhcRate = 0.031;
-      const cmhcCost = Math.round(insuredAmount * cmhcRate);
-      limitations.push({
-        id: 'cmhc-not-included',
-        text: `Mortgage insurance (CMHC) is not included. With ${Math.round(dpPct * 100)}% down, insurance would cost approximately $${cmhcCost.toLocaleString()}.`,
-        severity: 'caution',
-      });
-    }
-  }
-
   // No employer pension
   limitations.push({
     id: 'no-employer-pension',
@@ -116,8 +98,6 @@ export function computeConfidence(
   let overrideCount = 0;
   if (scenario.retirementAge) overrideCount++;
   if (scenario.annualSavingsRate) overrideCount++;
-  if (scenario.homePurchase) overrideCount++;
-  if (scenario.children && scenario.children.length > 0) overrideCount++;
   if (scenario.careerChange) overrideCount++;
   if (scenario.marketCrash) overrideCount++;
   if (scenario.inflationRate) overrideCount++;

@@ -36,8 +36,6 @@ The AI doesn't just answer questions. It runs full Monte Carlo simulations, comp
 
 ### Scenario Modelling
 - Career changes (new income, unemployment gap, EI/severance)
-- Home purchases (price, down payment %, mortgage calculation)
-- Children (year born, annual cost increase)
 - Market crashes (mild/moderate/severe)
 - Retirement age and income target changes
 - Savings rate adjustments and extra account contributions

@@ -27,7 +27,7 @@ export interface PhasedInsights {
 
 // ─── Scenario-Aware Types ──────────────────────────────────────────────────
 
-export type ScenarioFocus = 'home-purchase' | 'career-gap' | 'children' | 'market-crash'
+export type ScenarioFocus = 'career-gap' | 'market-crash'
   | 'retirement-age' | 'spending-change' | 'savings-change' | 'contribution-timing' | 'retirement';
 
 export interface MetricCardData {
@@ -89,26 +89,15 @@ function computeWeightedReturn(
   return weightedReturn;
 }
 
-function mortgagePayment(principal: number, annualRate: number, years: number): number {
-  const monthlyRate = annualRate / 12;
-  const numPayments = years * 12;
-  return (
-    (principal * monthlyRate * Math.pow(1 + monthlyRate, numPayments)) /
-    (Math.pow(1 + monthlyRate, numPayments) - 1)
-  );
-}
-
 // ─── Scenario Detection ────────────────────────────────────────────────────
 
 export function detectScenarioFocus(
   scenario: ScenarioOverrides,
   profile: FinancialProfile
 ): ScenarioFocus {
-  // Priority order: home-purchase > career-gap > children > market-crash >
+  // Priority order: career-gap > market-crash >
   // retirement-age > spending-change > savings-change > contribution-timing > retirement
-  if (scenario.homePurchase) return 'home-purchase';
   if (scenario.careerChange && scenario.careerChange.gapMonths > 0) return 'career-gap';
-  if (scenario.children && scenario.children.length > 0) return 'children';
   if (scenario.marketCrash) return 'market-crash';
   if (scenario.retirementAge !== undefined && scenario.retirementAge !== profile.retirementAge) return 'retirement-age';
   if (scenario.desiredRetirementIncome !== undefined) return 'spending-change';
@@ -145,40 +134,6 @@ export function generateMetricCards(
       delta: { label: `${moneyLastsDelta >= 0 ? '+' : ''}${moneyLastsDelta} yrs vs baseline`, positive: moneyLastsDelta >= 0 },
     } : {}),
   };
-
-  if (focus === 'home-purchase') {
-    const hp = scenario.homePurchase!;
-    const downPayment = hp.price * hp.downPaymentPercent;
-    const mortgageAmount = hp.price - downPayment;
-    const monthlyMtg = mortgagePayment(mortgageAmount, 0.05, 25);
-
-    // Liquid savings: non-registered + chequing + TFSA + FHSA
-    const liquidSavings = profile.accounts
-      .filter((a) => a.type === 'non-registered' || a.type === 'chequing' || a.type === 'tfsa' || a.type === 'fhsa')
-      .reduce((sum, a) => sum + a.marketValue, 0);
-    const gap = downPayment - liquidSavings;
-
-    // Monthly take-home (after tax)
-    const annualTax = calculateIncomeTax(profile.annualIncome, profile.province);
-    const monthlyTakeHome = (profile.annualIncome - annualTax) / 12;
-    const mortgagePercent = monthlyTakeHome > 0 ? (monthlyMtg / monthlyTakeHome) * 100 : 0;
-
-    return [
-      {
-        label: 'Down Payment',
-        value: fmtWhole(downPayment),
-        subtext: gap > 0 ? `${fmtWhole(gap)} short of liquid savings` : 'Covered by liquid savings',
-        severity: gap > 0 ? 'red' : 'green',
-      },
-      {
-        label: 'Monthly Mortgage',
-        value: `$${Math.round(monthlyMtg).toLocaleString()}/mo`,
-        subtext: `${mortgagePercent.toFixed(0)}% of take-home`,
-        severity: mortgagePercent < 30 ? 'green' : mortgagePercent <= 40 ? 'amber' : 'red',
-      },
-      longTermImpactCard,
-    ];
-  }
 
   if (focus === 'career-gap') {
     const cc = scenario.careerChange!;
@@ -331,46 +286,6 @@ export function generateVerdict(results: SimulationResults): Verdict {
 
   const focus = detectScenarioFocus(scenario, profile);
 
-  // ── Home Purchase verdict ──
-  if (focus === 'home-purchase') {
-    const hp = scenario.homePurchase!;
-    const downPayment = hp.price * hp.downPaymentPercent;
-    const mortgageAmount = hp.price - downPayment;
-    const monthlyMtg = mortgagePayment(mortgageAmount, 0.05, 25);
-    const liquidSavings = profile.accounts
-      .filter((a) => a.type === 'non-registered' || a.type === 'chequing' || a.type === 'tfsa' || a.type === 'fhsa')
-      .reduce((sum, a) => sum + a.marketValue, 0);
-    const gap = downPayment - liquidSavings;
-    const annualTax = calculateIncomeTax(profile.annualIncome, profile.province);
-    const monthlyTakeHome = (profile.annualIncome - annualTax) / 12;
-    const mortgagePercent = monthlyTakeHome > 0 ? (monthlyMtg / monthlyTakeHome) * 100 : 0;
-
-    if (gap > 0) {
-      return {
-        severity: 'red',
-        message: `You're ${fmtWhole(gap)} short on the down payment`,
-        subtext: `${fmtWhole(downPayment)} needed vs ${fmtWhole(liquidSavings)} in liquid savings`,
-        chatPrompt: 'What savings rate would cover the down payment in time?',
-      };
-    }
-    if (mortgagePercent > 35 || moneyLastsToAge < retirementAge) {
-      return {
-        severity: 'amber',
-        message: 'This purchase is a stretch',
-        subtext: mortgagePercent > 35
-          ? `Mortgage takes ${mortgagePercent.toFixed(0)}% of take-home pay`
-          : `Money runs out at age ${moneyLastsToAge}, before retirement`,
-        chatPrompt: 'What price range would be more comfortable?',
-      };
-    }
-    return {
-      severity: 'green',
-      message: 'This home purchase looks manageable',
-      subtext: `Down payment covered, mortgage is ${mortgagePercent.toFixed(0)}% of take-home`,
-      chatPrompt: 'What if I chose a different price or down payment?',
-    };
-  }
-
   // ── Career Gap verdict ──
   if (focus === 'career-gap') {
     const cc2 = scenario.careerChange!;
@@ -400,36 +315,6 @@ export function generateVerdict(results: SimulationResults): Verdict {
       message: `Your savings can absorb a ${cc2.gapMonths}-month income gap`,
       subtext: `${runwayMonths} months of runway, long-term outlook intact`,
       chatPrompt: 'What if the gap extends longer?',
-    };
-  }
-
-  // ── Children verdict ──
-  if (focus === 'children') {
-    const child = scenario.children![0];
-    const costStr = fmtWhole(child.annualCostIncrease);
-    const baseMessage = `A child in ${child.year} adds ${costStr}/year for 18 years`;
-
-    if (moneyLastsToAge >= lifeExpectancy) {
-      return {
-        severity: 'green',
-        message: baseMessage,
-        subtext: 'Long-term finances remain on track',
-        chatPrompt: 'What savings rate would offset the cost of a child?',
-      };
-    }
-    if (moneyLastsToAge >= lifeExpectancy - 5) {
-      return {
-        severity: 'amber',
-        message: baseMessage,
-        subtext: `Money lasts to age ${moneyLastsToAge} - close, but a small adjustment helps`,
-        chatPrompt: 'What savings rate would offset the cost of a child?',
-      };
-    }
-    return {
-      severity: 'red',
-      message: baseMessage,
-      subtext: `Money lasts to age ${moneyLastsToAge} - the added cost creates a significant gap`,
-      chatPrompt: 'What savings rate would offset the cost of a child?',
     };
   }
 
@@ -709,27 +594,6 @@ export function generateInsights(results: SimulationResults): PhasedInsights {
   }
 
   // ── SCENARIO IMPACTS ──
-
-  if (scenario.homePurchase) {
-    const hp = scenario.homePurchase;
-    const downPayment = hp.price * hp.downPaymentPercent;
-    const mortgageAmount = hp.price - downPayment;
-    const monthlyMtg = mortgagePayment(mortgageAmount, 0.05, 25);
-    const annualMtg = monthlyMtg * 12;
-    impacts.push({
-      label: 'Home purchase',
-      detail: `${fmtWhole(downPayment)} down payment in ${hp.year}, plus ${fmtWhole(monthlyMtg)}/month mortgage (${fmtK(annualMtg)}/year)`,
-    });
-  }
-
-  if (scenario.children && scenario.children.length > 0) {
-    for (const child of scenario.children) {
-      impacts.push({
-        label: 'Child',
-        detail: `Child in ${child.year} adds ${fmtWhole(child.annualCostIncrease)}/year in expenses for 18 years`,
-      });
-    }
-  }
 
   if (scenario.careerChange) {
     const cc = scenario.careerChange;

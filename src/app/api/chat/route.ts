@@ -57,8 +57,7 @@ You are now in Phase 2. You MUST:
 5. Be specific and grounded - every claim should reference a number from the results
 6. In "What to explore next", suggest 2-3 specific follow-up scenarios as questions the user could ask
 7. If the results include a NEAR-TERM CASH FLOW section, you MUST address the immediate financial situation first before discussing retirement impact. Lead with the cash flow gap and liquid runway, then cover recovery options, then retirement.
-8. If the results include a HOME PURCHASE ANALYSIS section, lead with affordability: Can they cover the down payment? Is the mortgage manageable relative to take-home pay? Then cover long-term retirement impact.
-9. NEVER reference "success rate" or "probability of ruin" - use retirement income, income replacement ratio, and how long the money lasts instead. Always mention CPP/OAS government pensions when discussing retirement income.
+8. NEVER reference "success rate" or "probability of ruin" - use retirement income, income replacement ratio, and how long the money lasts instead. Always mention CPP/OAS government pensions when discussing retirement income.
 10. When a SIBLING VARIANT COMPARISON section is present, frame the difference as cause-and-effect: "EI reduces the retirement impact from $X to $Y" or "With EI, your money lasts 2 years longer". Never compare two losses in the same sentence ("$X less vs $Y less"). Use with/without framing, not relative-to-relative framing.`;
 
 const SUMMARY_PROMPT_SUFFIX = `
@@ -72,8 +71,7 @@ You are now in Phase 2. You MUST:
 5. Do NOT suggest follow-up scenarios or next steps.
 6. If there is a COMPARISON VS BASELINE section, state the single most significant change.
 7. If the results include a NEAR-TERM CASH FLOW section, the one sentence should be about the immediate cash flow situation (monthly shortfall or runway), not retirement.
-8. If the results include a HOME PURCHASE ANALYSIS section, the one sentence should be about affordability (down payment gap or mortgage as % of take-home).
-9. For disruptive scenarios (job loss, career gap), state the facts neutrally - no reassuring language like "very manageable" or "barely makes a dent".
+8. For disruptive scenarios (job loss, career gap), state the facts neutrally - no reassuring language like "very manageable" or "barely makes a dent".
 10. When a SIBLING VARIANT COMPARISON section is present, state the difference using with/without framing: "With EI, the retirement impact drops from $X to $Y" or "EI extends your runway by N years". Never compare two losses ("$X less vs $Y less").`;
 
 export async function POST(request: NextRequest) {
@@ -294,21 +292,6 @@ function processRunSimulation(
   if (input.inflation_rate != null) scenario.inflationRate = input.inflation_rate as number;
   if (input.life_expectancy) scenario.lifeExpectancy = input.life_expectancy as number;
   if (input.desired_retirement_income) scenario.desiredRetirementIncome = input.desired_retirement_income as number;
-
-  if (input.home_purchase_year) {
-    scenario.homePurchase = {
-      year: input.home_purchase_year as number,
-      price: (input.home_purchase_price as number) || 500000,
-      downPaymentPercent: (input.home_down_payment_percent as number) || 0.10,
-    };
-  }
-
-  if (input.child_year) {
-    scenario.children = [{
-      year: input.child_year as number,
-      annualCostIncrease: (input.child_annual_cost as number) || 18000,
-    }];
-  }
 
   if (input.career_change_year) {
     scenario.careerChange = {

@@ -148,7 +148,6 @@ function simulateSinglePath(
   const retirementAnnualExpenses = scenario.desiredRetirementIncome
     ?? profile.desiredRetirementIncome
     ?? baseAnnualExpenses;
-  let fixedNominalExpenses = 0; // mortgage payments (don't inflate)
   let isEmployed = true;
   let unemploymentMonths = 0;
 
@@ -176,31 +175,6 @@ function simulateSinglePath(
 
     // Pure job loss (no career change, just gap) - if careerChange has same income
     // the impact comes from the gap itself
-
-    // Children expenses (computed fresh each year, no accumulation)
-    let childrenExpenses = 0;
-    if (scenario.children) {
-      for (const child of scenario.children) {
-        if (calendarYear >= child.year) {
-          const yearsWithChild = calendarYear - child.year;
-          if (yearsWithChild < 18) {
-            childrenExpenses += child.annualCostIncrease;
-          }
-        }
-      }
-    }
-
-    // Home purchase
-    if (scenario.homePurchase && calendarYear === scenario.homePurchase.year) {
-      const downPayment = scenario.homePurchase.price * scenario.homePurchase.downPaymentPercent;
-      // Deduct down payment from non-registered accounts first, then others
-      accounts = deductFromAccounts(accounts, downPayment);
-
-      // Add mortgage payment as ongoing expense (~5% rate, 25yr amortization)
-      const mortgageAmount = scenario.homePurchase.price - downPayment;
-      const monthlyMortgage = calculateMortgagePayment(mortgageAmount, 0.05, 25);
-      fixedNominalExpenses += monthlyMortgage * 12;
-    }
 
     // ── Generate market returns ──
 
@@ -294,9 +268,7 @@ function simulateSinglePath(
     // ── Contributions / Withdrawals ──
 
     if (!isRetired) {
-      const inflatedExpenses =
-        (baseAnnualExpenses + childrenExpenses) * inflationFactor
-        + fixedNominalExpenses;
+      const inflatedExpenses = baseAnnualExpenses * inflationFactor;
 
       if (unemployedFractionThisYear > 0) {
         // Partially or fully unemployed this year:
@@ -353,9 +325,7 @@ function simulateSinglePath(
       }
     } else {
       // ── Retired - withdraw for expenses, offset by government pensions ──
-      const inflatedExpenses =
-        (retirementAnnualExpenses + childrenExpenses) * inflationFactor
-        + fixedNominalExpenses;
+      const inflatedExpenses = retirementAnnualExpenses * inflationFactor;
 
       // Calculate government pension income (CPP/OAS/GIS)
       // First pass: estimate portfolio withdrawal as full expenses (for OAS clawback)
@@ -543,30 +513,11 @@ function distributeContributions(
     remaining -= contribution;
   }
 
-  // 3. Max out FHSA
-  const fhsa = accounts.find((a) => a.type === 'fhsa');
-  if (fhsa && remaining > 0) {
-    const contribution = Math.min(remaining, CONTRIBUTION_LIMITS.fhsa);
-    fhsa.marketValue += contribution;
-    remaining -= contribution;
-  }
-
-  // 4. Rest goes to non-registered
+  // 3. Rest goes to non-registered
   const nonReg = accounts.find((a) => a.type === 'non-registered');
   if (nonReg && remaining > 0) {
     nonReg.marketValue += remaining;
   }
-}
-
-function calculateMortgagePayment(
-  principal: number,
-  annualRate: number,
-  years: number
-): number {
-  const monthlyRate = annualRate / 12;
-  const numPayments = years * 12;
-  return (principal * monthlyRate * Math.pow(1 + monthlyRate, numPayments)) /
-    (Math.pow(1 + monthlyRate, numPayments) - 1);
 }
 
 // ─── Percentile Calculation ─────────────────────────────────────────────────

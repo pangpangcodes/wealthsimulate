@@ -105,7 +105,6 @@ export interface FinancialGoal {
 
 export type GoalType =
   | 'retirement'
-  | 'home-purchase'
   | 'education'
   | 'emergency-fund'
   | 'major-purchase'

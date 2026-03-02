@@ -15,15 +15,6 @@ export interface ScenarioOverrides {
   retirementAge?: number;
   annualSavingsRate?: number;
   additionalIncome?: number;
-  homePurchase?: {
-    year: number;
-    price: number;
-    downPaymentPercent: number;
-  };
-  children?: {
-    year: number;
-    annualCostIncrease: number; // additional annual expense
-  }[];
   careerChange?: {
     year: number;
     newIncome: number;

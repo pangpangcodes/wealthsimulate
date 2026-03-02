@@ -24,26 +24,6 @@ export const CLAUDE_TOOLS: Anthropic.Tool[] = [
           type: 'number',
           description: 'Additional annual income (e.g., side hustle, rental income)',
         },
-        home_purchase_year: {
-          type: 'number',
-          description: 'Year to purchase a home',
-        },
-        home_purchase_price: {
-          type: 'number',
-          description: 'Home purchase price in dollars',
-        },
-        home_down_payment_percent: {
-          type: 'number',
-          description: 'Down payment as decimal (e.g., 0.20 for 20%)',
-        },
-        child_year: {
-          type: 'number',
-          description: 'Year of first child',
-        },
-        child_annual_cost: {
-          type: 'number',
-          description: 'Estimated annual cost increase per child (default: $18,000)',
-        },
         career_change_year: {
           type: 'number',
           description: 'Year of career change or job loss',
@@ -121,7 +101,7 @@ export const CLAUDE_TOOLS: Anthropic.Tool[] = [
       properties: {
         goal_type: {
           type: 'string',
-          enum: ['retirement', 'home-purchase', 'education', 'emergency-fund', 'major-purchase', 'debt-payoff', 'custom'],
+          enum: ['retirement', 'education', 'emergency-fund', 'major-purchase', 'debt-payoff', 'custom'],
           description: 'Type of financial goal',
         },
         name: {

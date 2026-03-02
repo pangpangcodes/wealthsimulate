@@ -148,35 +148,6 @@ SIBLING VARIANT COMPARISON ("${siblingVariant.scenarioName}" vs this "${results.
 - This retirement net worth: $${Math.round(thisNw).toLocaleString()}`;
   }
 
-  // Add home purchase analysis section
-  const homePurchase = results.config.scenario.homePurchase;
-  if (homePurchase) {
-    const profile = results.config.profile;
-    const downPayment = homePurchase.price * homePurchase.downPaymentPercent;
-    const mortgageAmount = homePurchase.price - downPayment;
-    const monthlyRate = 0.05 / 12;
-    const numPayments = 25 * 12;
-    const monthlyMortgage = (mortgageAmount * monthlyRate * Math.pow(1 + monthlyRate, numPayments))
-      / (Math.pow(1 + monthlyRate, numPayments) - 1);
-
-    // Liquid savings: non-reg + chequing + TFSA + FHSA
-    const liquidSavings = profile.accounts
-      .filter((a) => a.type === 'non-registered' || a.type === 'chequing' || a.type === 'tfsa' || a.type === 'fhsa')
-      .reduce((sum, a) => sum + a.marketValue, 0);
-    const gap = downPayment - liquidSavings;
-    const monthlyExpensesAfter = profile.monthlyExpenses + monthlyMortgage;
-
-    payload += `
-
-HOME PURCHASE ANALYSIS:
-- Property price: $${homePurchase.price.toLocaleString()}
-- Down payment (${Math.round(homePurchase.downPaymentPercent * 100)}%): $${Math.round(downPayment).toLocaleString()}
-- Monthly mortgage: $${Math.round(monthlyMortgage).toLocaleString()}/mo (5% rate, 25yr amort)
-- Current liquid savings: $${Math.round(liquidSavings).toLocaleString()}
-- Down payment gap: ${gap > 0 ? `$${Math.round(gap).toLocaleString()} short` : 'Covered'}
-- Monthly expenses after purchase: $${Math.round(monthlyExpensesAfter).toLocaleString()}/mo`;
-  }
-
   return payload;
 }
 
@@ -343,7 +314,7 @@ export function useChat(onSimulationRequest?: (scenario: ScenarioOverrides) => v
         };
         useProfileStore.getState().addGoal({
           id: goal.id,
-          type: goal.type as 'retirement' | 'home-purchase' | 'education' | 'emergency-fund' | 'major-purchase' | 'debt-payoff' | 'custom',
+          type: goal.type as 'retirement' | 'education' | 'emergency-fund' | 'major-purchase' | 'debt-payoff' | 'custom',
           name: goal.name,
           targetAmount: goal.targetAmount,
           targetYear: goal.targetYear,
