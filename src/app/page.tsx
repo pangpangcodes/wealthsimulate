@@ -33,11 +33,11 @@ export default function OnboardingPage() {
   const handleSeedStart = () => {
     loadSeedProfile();
     setOnboarded(true);
-    router.push('/review');
+    router.push('/simulator');
   };
 
   const handleUploadComplete = () => {
-    router.push('/review');
+    router.push('/simulator');
   };
 
   return (
