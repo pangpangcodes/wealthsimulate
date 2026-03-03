@@ -15,7 +15,7 @@ const TOTAL_STEPS = 3;
 
 export default function ReviewPage() {
   const router = useRouter();
-  const [step, setStep] = useState(0); // 0 = welcome, 1-3 = steps
+  const [step, setStep] = useState(1); // 1-3 = steps (skip welcome)
 
   const handleComplete = () => {
     router.push('/simulator');
